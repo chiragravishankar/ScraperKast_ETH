@@ -1,0 +1,17 @@
+# Source — published as compiled dist/ only
+src/
+
+# TypeScript project files
+tsconfig.json
+tsconfig.tsbuildinfo
+
+# Tests
+**/*.test.ts
+**/*.spec.ts
+vitest.config.ts
+
+# Dev artefacts
+node_modules/
+coverage/
+.env
+.env.*

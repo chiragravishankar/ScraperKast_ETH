@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base ────────────────────────────────────────────────────────────────── */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    @apply bg-white text-gray-900 antialiased;
+    /* Prevent layout shift from scrollbar appearing */
+    scrollbar-gutter: stable;
+  }
+}
+
+/* ── Reusable component classes ──────────────────────────────────────────── */
+@layer components {
+  /* Max-width wrapper centred on the page */
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-5 sm:px-8;
+  }
+
+  /* Animated gradient text */
+  .text-brand-gradient {
+    @apply bg-gradient-to-r from-brand-dark via-brand-mid to-brand-light
+           bg-clip-text text-transparent;
+    background-size: 200% auto;
+    animation: gradient-shift 4s ease infinite;
+  }
+
+  /* Hero radial glow — applied as a class on the hero <section> */
+  .hero-glow {
+    background:
+      radial-gradient(ellipse 90% 55% at 50% -5%,
+        rgba(2, 195, 154, 0.13) 0%,
+        rgba(0, 168, 150, 0.06) 45%,
+        transparent 70%),
+      white;
+  }
+
+  /* Code token colours — kept as semantic class names so they're easy to tweak */
+  .tk-keyword  { @apply text-[#7dd3fc]; }   /* sky-300  — import, from        */
+  .tk-string   { @apply text-[#fbbf24]; }   /* amber-400 — quoted strings      */
+  .tk-prop     { @apply text-[#6ee7b7]; }   /* emerald-300 — object keys       */
+  .tk-number   { @apply text-[#c084fc]; }   /* purple-400 — numeric literals   */
+  .tk-comment  { @apply text-[#4b5563]; }   /* gray-600  — inline comments     */
+  .tk-plain    { @apply text-gray-200; }    /* default token colour            */
+  .tk-linenum  { @apply text-gray-600 select-none text-right tabular-nums; }
+}
+
+/* ── Keyframes ───────────────────────────────────────────────────────────── */
+@layer utilities {
+  @keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%;   }
+    50%       { background-position: 100% 50%; }
+  }
+
+  /* Fade-up — used as a CSS fallback when JS is disabled */
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0);    }
+  }
+
+  .animate-fade-up {
+    animation: fade-up 0.5s ease-out both;
+  }
+}

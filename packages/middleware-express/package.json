@@ -1,0 +1,74 @@
+{
+  "name": "@scraperkast/middleware-express",
+  "version": "0.1.0",
+  "description": "AI bot paywall for Express.js — open-source alternative to TollBit",
+  "keywords": [
+    "ai",
+    "bot",
+    "paywall",
+    "monetization",
+    "express",
+    "middleware",
+    "scraperkast",
+    "tollbit",
+    "openai",
+    "claude",
+    "content-protection",
+    "llm",
+    "gptbot",
+    "crawler",
+    "bot-detection"
+  ],
+  "author": {
+    "name": "Chirag Ravishankar",
+    "url": "https://github.com/chiragravishankar"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chiragravishankar/scraperkast.git",
+    "directory": "packages/middleware-express"
+  },
+  "homepage": "https://scraperkast.com",
+  "bugs": {
+    "url": "https://github.com/chiragravishankar/scraperkast/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "dependencies": {
+    "@scraperkast/core": "^0.1.0"
+  },
+  "peerDependencies": {
+    "express": "^4.18.0 || ^5.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/supertest": "^7.2.0",
+    "express": "^4.19.0",
+    "supertest": "^7.2.2",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
