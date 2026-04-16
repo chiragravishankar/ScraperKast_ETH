@@ -22,7 +22,9 @@
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
-    "clean": "npm run clean --workspaces --if-present && rm -rf node_modules"
+    "clean": "npm run clean --workspaces --if-present && rm -rf node_modules",
+    "dev:dashboard": "npm run dev --workspace=apps/dashboard",
+    "build:dashboard": "npm run build --workspace=apps/dashboard"
   },
   "devDependencies": {
     "typescript": "^5.4.0",
