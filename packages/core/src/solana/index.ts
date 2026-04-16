@@ -1,5 +1,6 @@
 export * from './config.js';
 export * from './connection.js';
+export * from './paymentService.js';
 export * from './types.js';
 
 import { NETWORKS, getCurrentConfig } from './config.js';
