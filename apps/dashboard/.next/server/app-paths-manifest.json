@@ -1,0 +1,13 @@
+{
+  "/page": "app/page.js",
+  "/api/dashboard/stats/route": "app/api/dashboard/stats/route.js",
+  "/api/dashboard/realtime/route": "app/api/dashboard/realtime/route.js",
+  "/api/dashboard/revenue/route": "app/api/dashboard/revenue/route.js",
+  "/api/dashboard/transactions/route": "app/api/dashboard/transactions/route.js",
+  "/api/dashboard/bots/route": "app/api/dashboard/bots/route.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/dashboard/bots/page": "app/dashboard/bots/page.js",
+  "/dashboard/transactions/page": "app/dashboard/transactions/page.js",
+  "/dashboard/settings/page": "app/dashboard/settings/page.js",
+  "/dashboard/revenue/page": "app/dashboard/revenue/page.js"
+}
