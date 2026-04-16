@@ -5,7 +5,9 @@
       "Bash(npx vitest:*)",
       "Bash(npm test:*)",
       "Bash(npx tsc:*)",
-      "Bash(timeout 6 node --loader tsx/esm examples/express-demo/src/server.ts)"
+      "Bash(timeout 6 node --loader tsx/esm examples/express-demo/src/server.ts)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)"
     ]
   }
 }
