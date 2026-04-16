@@ -9,6 +9,7 @@ import 'dotenv/config';
 import express, { type Request, type Response } from 'express';
 import { scraperKast } from '@scraperkast/middleware-express';
 import { detectBot } from '@scraperkast/core';
+import type { SolanaPaymentConfig } from '@scraperkast/middleware-express';
 
 // ─── ANSI colour helpers ──────────────────────────────────────────────────────
 
@@ -28,8 +29,11 @@ const paint = (colour: string, text: string) => `${colour}${text}${c.reset}`;
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
-const PORT       = Number(process.env['PORT'] ?? 3000);
-const JWT_SECRET = process.env['JWT_SECRET'] ?? 'dev-secret-change-in-production';
+const PORT            = Number(process.env['PORT'] ?? 3000);
+const JWT_SECRET      = process.env['JWT_SECRET'] ?? 'dev-secret-change-in-production';
+const PLATFORM_WALLET = process.env['PLATFORM_WALLET'];
+const OWNER_WALLET    = process.env['OWNER_WALLET'];
+const SOLANA_RPC_URL  = process.env['SOLANA_RPC_URL'];
 
 if (JWT_SECRET === 'dev-secret-change-in-production') {
   console.warn(
@@ -53,28 +57,64 @@ app.use(express.json());
 // while passing human traffic straight through — no rule, no access.
 //
 
+// ── Build optional Solana config ─────────────────────────────────────────────
+//
+// Solana payments are enabled when both PLATFORM_WALLET and OWNER_WALLET are
+// set.  Set SOLANA_NETWORK=mainnet to switch to mainnet (real money!).
+//
+
+let solanaConfig: SolanaPaymentConfig | undefined;
+
+if (PLATFORM_WALLET && OWNER_WALLET) {
+  const network = (process.env['SOLANA_NETWORK'] ?? 'devnet') === 'mainnet'
+    ? 'mainnet'
+    : 'devnet';
+
+  solanaConfig = {
+    enabled:        true,
+    network,
+    platformWallet: PLATFORM_WALLET,
+    ownerWallet:    OWNER_WALLET,
+    ...(SOLANA_RPC_URL ? { rpcUrl: SOLANA_RPC_URL } : {}),
+  };
+
+  console.log(
+    paint(c.bold + c.cyan,
+      `⛓  Solana payments enabled — network=${network} ` +
+      `owner=${OWNER_WALLET.slice(0, 8)}… platform=${PLATFORM_WALLET.slice(0, 8)}…`,
+    ),
+  );
+} else {
+  console.log(
+    paint(c.yellow,
+      '⚠  Solana disabled. Set PLATFORM_WALLET + OWNER_WALLET in .env to enable.',
+    ),
+  );
+}
+
 app.use(
   scraperKast({
-    jwtSecret: JWT_SECRET,
+    jwtSecret:       JWT_SECRET,
     enableAnalytics: true,
+    solana:          solanaConfig,
 
     rules: [
       {
         id:           'blog',
         path:         '/blog/*',
-        pricePerPage: 100,           // $0.001 per page
+        pricePerPage: 100,           // 100 µUSDC = $0.0001 per page
         licenseType:  'summarization',
       },
       {
         id:           'api-docs',
         path:         '/docs/api/*',
-        pricePerPage: 500,           // $0.005 per page
+        pricePerPage: 500,           // 500 µUSDC = $0.0005 per page
         licenseType:  'full_display',
       },
       {
         id:           'premium',
         path:         '/premium/*',
-        pricePerPage: 1000,          // $0.01 per page
+        pricePerPage: 1000,          // 1000 µUSDC = $0.001 per page
         licenseType:  'full_display',
       },
     ],
@@ -569,6 +609,16 @@ app.listen(PORT, () => {
   console.log('');
   console.log(`  ${paint(c.bold, 'Quick test — simulate GPTBot hitting /blog/intro-to-llms:')}`);
   console.log(`    ${paint(c.cyan, `curl -H "User-Agent: GPTBot/1.0" http://localhost:${PORT}/blog/intro-to-llms`)}`);
+  console.log('');
+  if (solanaConfig) {
+    console.log(`  ${paint(c.bold, 'Verify a Solana payment (POST /verify-payment):')}`);
+    console.log(`    ${paint(c.cyan, `curl -X POST http://localhost:${PORT}/verify-payment \\`)}`);
+    console.log(`         ${paint(c.cyan, `-H "Content-Type: application/json" \\`)}`);
+    console.log(`         ${paint(c.cyan, `-d '{"txSignature":"<sig>","botId":"gptbot","domain":"localhost"}'`)}`);
+    console.log('');
+    console.log(`  ${paint(c.bold, 'End-to-end Solana payment test:')}`);
+    console.log(`    ${paint(c.cyan, `npx tsx examples/express-demo/test-solana-payment.ts`)}`);
+  }
   console.log(divider);
   console.log('');
 });
