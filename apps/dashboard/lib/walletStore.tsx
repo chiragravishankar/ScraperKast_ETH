@@ -8,7 +8,7 @@ import {
   useWallet as useAdapterWallet,
   useConnection,
 } from '@solana/wallet-adapter-react';
-import { PublicKey } from '@solana/web3.js';
+import { PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { getAssociatedTokenAddress, getAccount } from '@solana/spl-token';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -88,9 +88,12 @@ export function PlatformWalletProvider({ children }: { children: ReactNode }) {
     } catch { /* ignore parse errors */ }
   }, []);
 
-  // Sync adapter wallet state into our store
+  // Sync adapter wallet state into our store, then immediately fetch balance
   useEffect(() => {
     if (connected && publicKey) {
+      console.log('[WalletStore] Wallet connected:', publicKey.toBase58());
+      console.log('[WalletStore] Adapter:', wallet?.adapter.name);
+
       const adapterName = (wallet?.adapter.name ?? '').toLowerCase();
       const walletType: WalletAdapterName =
         adapterName.includes('phantom')  ? 'phantom'  :
@@ -102,13 +105,13 @@ export function PlatformWalletProvider({ children }: { children: ReactNode }) {
         address:     publicKey.toBase58(),
         walletType,
         isConnected: true,
-        // Pre-fill auto-withdraw destination if not set
         autoWithdraw: {
           ...prev.autoWithdraw,
           destination: prev.autoWithdraw.destination || publicKey.toBase58(),
         },
       }));
     } else {
+      if (!connected) console.log('[WalletStore] Wallet disconnected');
       setState(prev => ({
         ...prev,
         address:     null,
@@ -119,11 +122,26 @@ export function PlatformWalletProvider({ children }: { children: ReactNode }) {
     }
   }, [connected, publicKey, wallet]);
 
+  // Auto-refresh balance whenever wallet connects (or publicKey changes)
+  useEffect(() => {
+    if (connected && publicKey) {
+      void refreshBalance();
+    }
+  // refreshBalance is stable within a connection — including it would cause loops
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connected, publicKey]);
+
   // Fetch real on-chain USDC balance + platform earnings
   const refreshBalance = useCallback(async () => {
+    console.log('=== [WalletStore] BALANCE FETCH START ===');
+    console.log('  connected   :', connected);
+    console.log('  publicKey   :', publicKey?.toBase58() ?? 'none');
+    console.log('  rpcEndpoint :', connection.rpcEndpoint);
+    console.log('  USDC mint   :', DEVNET_USDC_MINT.toBase58());
+
     setState(prev => ({ ...prev, isLoading: true }));
     try {
-      // Platform earnings from API (mock for now)
+      // Platform earnings from API
       const res  = await fetch('/api/wallet/balance');
       const data = await res.json() as {
         balance: number; pending: number; lifetime: number;
@@ -132,22 +150,35 @@ export function PlatformWalletProvider({ children }: { children: ReactNode }) {
 
       let onChainBalance = 0;
 
-      // If a real wallet is connected, fetch its actual devnet USDC balance
       if (publicKey && connected) {
+        // SOL balance (useful for fee diagnostics)
+        const lamports = await connection.getBalance(publicKey);
+        console.log('  SOL balance :', lamports / LAMPORTS_PER_SOL, 'SOL');
+
+        // USDC ATA
+        const ata = await getAssociatedTokenAddress(DEVNET_USDC_MINT, publicKey);
+        console.log('  USDC ATA    :', ata.toBase58());
+
         try {
-          const ata     = await getAssociatedTokenAddress(DEVNET_USDC_MINT, publicKey);
           const account = await getAccount(connection, ata);
-          // account.amount is a BigInt in µUSDC (6 decimals)
           onChainBalance = Number(account.amount);
-        } catch {
-          // Token account doesn't exist yet = 0 USDC
+          console.log('  raw amount  :', account.amount.toString(), 'µUSDC');
+          console.log('  USDC balance:', onChainBalance / 1_000_000, 'USDC ✅');
+        } catch (ataErr) {
+          const name = (ataErr as Error).name;
+          if (name === 'TokenAccountNotFoundError' || name === 'TokenInvalidAccountOwnerError') {
+            console.log('  ATA not found — wallet has no USDC token account yet (balance = 0)');
+          } else {
+            console.error('  ATA fetch error:', ataErr);
+          }
           onChainBalance = 0;
         }
+      } else {
+        console.log('  Wallet not connected — skipping on-chain fetch, using platform mock');
       }
 
       setState(prev => ({
         ...prev,
-        // Show real on-chain balance when connected, otherwise platform mock
         balance:   connected ? onChainBalance : data.balance,
         pending:   data.pending,
         lifetime:  data.lifetime,
@@ -155,7 +186,9 @@ export function PlatformWalletProvider({ children }: { children: ReactNode }) {
         network:   'devnet',
         isLoading: false,
       }));
-    } catch {
+      console.log('=== [WalletStore] BALANCE FETCH DONE — displayed:', connected ? onChainBalance / 1_000_000 + ' USDC' : 'mock');
+    } catch (err) {
+      console.error('[WalletStore] refreshBalance error:', err);
       setState(prev => ({ ...prev, isLoading: false }));
     }
   }, [connection, publicKey, connected]);

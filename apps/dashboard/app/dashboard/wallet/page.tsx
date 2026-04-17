@@ -7,7 +7,7 @@ import {
   ExternalLink, Shield, Settings2, CreditCard, Trash2,
   ChevronRight, X,
 } from 'lucide-react';
-import { useWallet as useAdapterWallet } from '@solana/wallet-adapter-react';
+import { useWallet as useAdapterWallet, useConnection } from '@solana/wallet-adapter-react';
 import { usePlatformWallet } from '@/lib/walletStore';
 import type { AutoWithdrawSettings } from '@/lib/walletStore';
 import { formatUsdcDollar, shortenAddress, timeAgo, explorerUrl } from '@/lib/formatters';
@@ -86,7 +86,11 @@ export default function WalletPage() {
   } = usePlatformWallet();
 
   // Adapter gives us real disconnect + wallet metadata
-  const { disconnect: adapterDisconnect, wallet: activeWallet } = useAdapterWallet();
+  const {
+    disconnect: adapterDisconnect, wallet: activeWallet,
+    publicKey, connected: adapterConnected,
+  } = useAdapterWallet();
+  const { connection } = useConnection();
 
   function disconnect() {
     void adapterDisconnect();
@@ -161,6 +165,34 @@ export default function WalletPage() {
           Refresh
         </button>
       </div>
+
+      {/* ── Debug Panel (remove once balance is confirmed working) ─────────── */}
+      <details className="bg-slate-900 rounded-xl text-xs font-mono text-slate-300 overflow-hidden">
+        <summary className="px-4 py-2.5 cursor-pointer text-slate-400 hover:text-slate-200 select-none">
+          🔍 Debug: Wallet &amp; Balance Info
+        </summary>
+        <div className="px-4 pb-4 space-y-1 border-t border-slate-700 pt-3">
+          <div><span className="text-slate-500">adapter connected :</span> {adapterConnected ? '✅ true' : '❌ false'}</div>
+          <div><span className="text-slate-500">store isConnected :</span> {isConnected ? '✅ true' : '❌ false'}</div>
+          <div><span className="text-slate-500">publicKey        :</span> {publicKey?.toBase58() ?? 'none'}</div>
+          <div><span className="text-slate-500">wallet name      :</span> {activeWallet?.adapter.name ?? 'none'}</div>
+          <div><span className="text-slate-500">rpc endpoint     :</span> {connection.rpcEndpoint}</div>
+          <div><span className="text-slate-500">balance (µUSDC)  :</span> {balance}</div>
+          <div><span className="text-slate-500">balance (USDC)   :</span> {(balance / 1_000_000).toFixed(6)}</div>
+          <div><span className="text-slate-500">network          :</span> {network}</div>
+          <div className="pt-2">
+            <button
+              onClick={() => {
+                console.log('🔄 Manual refresh triggered from debug panel');
+                void refreshBalance();
+              }}
+              className="px-3 py-1.5 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors text-xs"
+            >
+              🔄 Force Refresh Balance
+            </button>
+          </div>
+        </div>
+      </details>
 
       {/* ── Section 1: Balance Hero + Quick Actions ──────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
