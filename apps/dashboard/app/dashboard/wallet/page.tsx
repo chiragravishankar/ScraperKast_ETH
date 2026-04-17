@@ -7,7 +7,8 @@ import {
   ExternalLink, Shield, Settings2, CreditCard, Trash2,
   ChevronRight, X,
 } from 'lucide-react';
-import { useWallet } from '@/lib/walletStore';
+import { useWallet as useAdapterWallet } from '@solana/wallet-adapter-react';
+import { usePlatformWallet } from '@/lib/walletStore';
 import type { AutoWithdrawSettings } from '@/lib/walletStore';
 import { formatUsdcDollar, shortenAddress, timeAgo, explorerUrl } from '@/lib/formatters';
 import ConnectWallet from '@/components/ConnectWallet';
@@ -81,8 +82,15 @@ const INITIAL_CARDS: MockCard[] = [
 export default function WalletPage() {
   const {
     address, walletType, balance, pending, lifetime, today, network,
-    isConnected, isLoading, autoWithdraw, refreshBalance, disconnect, setAutoWithdraw,
-  } = useWallet();
+    isConnected, isLoading, autoWithdraw, refreshBalance, setAutoWithdraw,
+  } = usePlatformWallet();
+
+  // Adapter gives us real disconnect + wallet metadata
+  const { disconnect: adapterDisconnect, wallet: activeWallet } = useAdapterWallet();
+
+  function disconnect() {
+    void adapterDisconnect();
+  }
 
   const [history,      setHistory]      = useState<HistoryItem[]>([]);
   const [cards,        setCards]        = useState<MockCard[]>(INITIAL_CARDS);
@@ -380,6 +388,48 @@ export default function WalletPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Section 2b: Devnet Faucet Helper ────────────────────────────────── */}
+      {isConnected && network === 'devnet' && (
+        <div className="bg-sky-50 border border-sky-200 rounded-xl p-5">
+          <h2 className="text-sm font-semibold text-sky-900 mb-3 flex items-center gap-2">
+            <Zap className="w-4 h-4 text-sky-600" />
+            Get Devnet Test Tokens
+          </h2>
+          <p className="text-xs text-sky-700 mb-3">
+            You&apos;re on <strong>Devnet</strong> — all tokens are free test tokens with no real value.
+          </p>
+          <ol className="text-sm text-sky-800 space-y-2">
+            <li>
+              <span className="font-semibold">1. Get devnet SOL</span> (needed for transaction fees){' '}
+              <a
+                href="https://faucet.solana.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-brand-dark hover:underline inline-flex items-center gap-0.5 font-medium"
+              >
+                Solana Faucet <ExternalLink className="w-3 h-3" />
+              </a>
+            </li>
+            <li>
+              <span className="font-semibold">2. Get devnet USDC</span>{' '}
+              <a
+                href="https://spl-token-faucet.com/?token-name=USDC-Dev"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-brand-dark hover:underline inline-flex items-center gap-0.5 font-medium"
+              >
+                SPL Token Faucet <ExternalLink className="w-3 h-3" />
+              </a>
+            </li>
+            <li className="flex items-start gap-1.5">
+              <span className="font-semibold shrink-0">3. Your address:</span>
+              <span className="font-mono text-xs break-all text-sky-700">{address}</span>
+              {address && <CopyButton text={address} />}
+            </li>
+          </ol>
+        </div>
+      )}
 
       {/* ── Section 3: Payment Methods ───────────────────────────────────────── */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">

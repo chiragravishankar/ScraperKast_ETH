@@ -2,14 +2,26 @@
 
 import { useState } from 'react';
 import { X, Loader2, CheckCircle, AlertCircle, ExternalLink } from 'lucide-react';
-import { useWallet } from '@/lib/walletStore';
+import { useWallet as useAdapterWallet, useConnection } from '@solana/wallet-adapter-react';
+import {
+  PublicKey, Transaction,
+} from '@solana/web3.js';
+import {
+  getAssociatedTokenAddress,
+  createAssociatedTokenAccountIdempotentInstruction,
+  createTransferCheckedInstruction,
+  getAccount,
+} from '@solana/spl-token';
+import { usePlatformWallet } from '@/lib/walletStore';
 import { explorerUrl } from '@/lib/formatters';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const SOLANA_FEE_USDC = 0.000025; // approximate SOL tx fee in USD
-const MIN_WITHDRAWAL  = 1_000_000; // 1 USDC in µUSDC
-const BASE58          = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+const DEVNET_USDC_MINT    = new PublicKey('4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU');
+const USDC_DECIMALS       = 6;
+const SOLANA_FEE_USDC     = 0.000025; // approximate SOL tx fee in USD
+const MIN_WITHDRAWAL      = 1_000_000; // 1 USDC in µUSDC
+const BASE58              = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -22,7 +34,9 @@ interface WithdrawModalProps {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function WithdrawModal({ onClose }: WithdrawModalProps) {
-  const { balance, address, network, refreshBalance } = useWallet();
+  const { balance, address, network, refreshBalance } = usePlatformWallet();
+  const { publicKey, sendTransaction, connected }     = useAdapterWallet();
+  const { connection }                                = useConnection();
 
   const maxUsdc = balance / 1_000_000;
 
@@ -36,29 +50,96 @@ export default function WithdrawModal({ onClose }: WithdrawModalProps) {
   const amountMicro = Math.floor(amount * 1_000_000);
   const netAmount   = Math.max(0, amount - SOLANA_FEE_USDC);
 
-  // Collect validation errors for live display
   const errors: string[] = [];
-  if (amountStr && amount <= 0)                      errors.push('Amount must be greater than 0');
-  if (amountStr && amountMicro < MIN_WITHDRAWAL)     errors.push('Minimum withdrawal is 1 USDC');
-  if (amountStr && amountMicro > balance)            errors.push('Amount exceeds your available balance');
-  if (destination && !BASE58.test(destination))      errors.push('Invalid Solana wallet address (base58, 32–44 chars)');
+  if (amountStr && amount <= 0)                  errors.push('Amount must be greater than 0');
+  if (amountStr && amountMicro < MIN_WITHDRAWAL) errors.push('Minimum withdrawal is 1 USDC');
+  if (amountStr && amountMicro > balance)        errors.push('Amount exceeds your available balance');
+  if (destination && !BASE58.test(destination))  errors.push('Invalid Solana wallet address (base58, 32–44 chars)');
 
   const canSubmit =
     amount > 0 && amountMicro >= MIN_WITHDRAWAL &&
     amountMicro <= balance && BASE58.test(destination) &&
     errors.length === 0;
 
+  // ── Real on-chain USDC transfer ───────────────────────────────────────────
+
+  async function handleRealWithdraw() {
+    if (!publicKey || !connected) throw new Error('Wallet not connected');
+
+    const recipientPubkey = new PublicKey(destination);
+
+    // Source ATA (sender)
+    const fromAta = await getAssociatedTokenAddress(DEVNET_USDC_MINT, publicKey);
+
+    // Verify sender has enough balance
+    const fromAccount = await getAccount(connection, fromAta);
+    if (Number(fromAccount.amount) < amountMicro) {
+      throw new Error('Insufficient USDC balance in wallet');
+    }
+
+    // Destination ATA — create idempotently if it doesn't exist
+    const toAta = await getAssociatedTokenAddress(DEVNET_USDC_MINT, recipientPubkey);
+
+    const tx = new Transaction();
+
+    // Add create-ATA instruction (no-op if it already exists)
+    tx.add(
+      createAssociatedTokenAccountIdempotentInstruction(
+        publicKey,      // payer
+        toAta,          // associated token account
+        recipientPubkey, // owner
+        DEVNET_USDC_MINT,
+      ),
+    );
+
+    // Add transfer instruction
+    tx.add(
+      createTransferCheckedInstruction(
+        fromAta,
+        DEVNET_USDC_MINT,
+        toAta,
+        publicKey,
+        BigInt(amountMicro),
+        USDC_DECIMALS,
+      ),
+    );
+
+    // Send — wallet extension will prompt user to approve
+    const signature = await sendTransaction(tx, connection);
+
+    // Wait for confirmation
+    const { blockhash, lastValidBlockHeight } =
+      await connection.getLatestBlockhash();
+    await connection.confirmTransaction(
+      { signature, blockhash, lastValidBlockHeight },
+      'confirmed',
+    );
+
+    return signature;
+  }
+
+  // ── Fallback mock withdraw (when no real wallet connected) ───────────────
+
+  async function handleMockWithdraw() {
+    const res  = await fetch('/api/wallet/withdraw', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ amount: amountMicro, destination }),
+    });
+    const data = await res.json() as { success: boolean; txHash?: string; error?: string };
+    if (!data.success) throw new Error(data.error ?? 'Withdrawal failed');
+    return data.txHash ?? '';
+  }
+
+  // ── Submit handler ────────────────────────────────────────────────────────
+
   async function handleSubmit() {
     setStep('loading');
     try {
-      const res  = await fetch('/api/wallet/withdraw', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ amount: amountMicro, destination }),
-      });
-      const data = await res.json() as { success: boolean; txHash?: string; error?: string };
-      if (!data.success) throw new Error(data.error ?? 'Withdrawal failed');
-      setTxHash(data.txHash ?? '');
+      const hash = connected && publicKey
+        ? await handleRealWithdraw()
+        : await handleMockWithdraw();
+      setTxHash(hash);
       await refreshBalance();
       setStep('success');
     } catch (err) {
@@ -73,7 +154,14 @@ export default function WithdrawModal({ onClose }: WithdrawModalProps) {
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h2 className="font-semibold text-slate-900">Withdraw USDC</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold text-slate-900">Withdraw USDC</h2>
+            {connected && (
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-sky-100 text-sky-700">
+                Devnet · Real tx
+              </span>
+            )}
+          </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
             <X className="w-5 h-5" />
           </button>
@@ -85,7 +173,7 @@ export default function WithdrawModal({ onClose }: WithdrawModalProps) {
           {step === 'form' && (
             <div className="space-y-4">
 
-              {/* Available balance pill */}
+              {/* Available balance */}
               <div className="bg-slate-50 rounded-xl px-4 py-2.5 flex items-center justify-between text-sm">
                 <span className="text-slate-500">Available balance</span>
                 <span className="font-semibold text-slate-800 tabular-nums">
@@ -93,7 +181,23 @@ export default function WithdrawModal({ onClose }: WithdrawModalProps) {
                 </span>
               </div>
 
-              {/* Amount input */}
+              {/* Real-wallet notice */}
+              {connected ? (
+                <div className="flex gap-2 text-xs text-sky-700 bg-sky-50 border border-sky-200 rounded-lg px-3 py-2.5">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <p>
+                    <strong>Real transaction:</strong> Your {publicKey?.toBase58().slice(0, 6)}… wallet will be
+                    prompted to sign. This transfers actual devnet USDC.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <p>No wallet connected — withdrawal will be simulated.</p>
+                </div>
+              )}
+
+              {/* Amount */}
               <div>
                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
                   Amount (USDC)
@@ -120,7 +224,7 @@ export default function WithdrawModal({ onClose }: WithdrawModalProps) {
                 </div>
               </div>
 
-              {/* Destination address */}
+              {/* Destination */}
               <div>
                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
                   Destination Wallet
@@ -163,20 +267,12 @@ export default function WithdrawModal({ onClose }: WithdrawModalProps) {
                 </div>
               )}
 
-              {/* Mainnet real-money warning */}
-              {network === 'mainnet' && (
-                <div className="flex gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <p><strong>Mainnet:</strong> This will transfer real USDC. Double-check the destination address.</p>
-                </div>
-              )}
-
               <button
-                onClick={handleSubmit}
+                onClick={() => { void handleSubmit(); }}
                 disabled={!canSubmit}
                 className="w-full py-3 bg-brand-dark text-white font-semibold rounded-xl hover:bg-brand-mid transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                Confirm Withdrawal
+                {connected ? 'Sign & Send Transaction' : 'Confirm Withdrawal'}
               </button>
             </div>
           )}
@@ -186,8 +282,10 @@ export default function WithdrawModal({ onClose }: WithdrawModalProps) {
             <div className="py-10 flex flex-col items-center gap-4">
               <Loader2 className="w-10 h-10 text-brand-dark animate-spin" />
               <div className="text-center">
-                <p className="font-semibold text-slate-800">Processing withdrawal…</p>
-                <p className="text-sm text-slate-500 mt-1">Broadcasting to Solana {network}</p>
+                <p className="font-semibold text-slate-800">
+                  {connected ? 'Waiting for wallet approval…' : 'Processing withdrawal…'}
+                </p>
+                <p className="text-sm text-slate-500 mt-1">Broadcasting to Solana devnet</p>
               </div>
             </div>
           )}

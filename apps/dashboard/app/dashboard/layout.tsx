@@ -8,7 +8,7 @@ import {
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import NetworkBadge from '@/components/NetworkBadge';
-import { WalletProvider, useWallet } from '@/lib/walletStore';
+import { PlatformWalletProvider, usePlatformWallet } from '@/lib/walletStore';
 import { BotStoreProvider } from '@/lib/botStore';
 import { PricingStoreProvider } from '@/lib/pricingStore';
 import { formatUsdcDollar, shortenAddress } from '@/lib/formatters';
@@ -54,7 +54,7 @@ function NavLink({ href, label, icon: Icon }: {
 // ── Topbar wallet indicator ───────────────────────────────────────────────────
 
 function WalletIndicator() {
-  const { address, balance, isConnected } = useWallet();
+  const { address, balance, isConnected } = usePlatformWallet();
   if (!isConnected || !address) return null;
 
   return (
@@ -156,12 +156,12 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <WalletProvider>
+    <PlatformWalletProvider>
       <BotStoreProvider>
         <PricingStoreProvider>
           <DashboardLayoutInner>{children}</DashboardLayoutInner>
         </PricingStoreProvider>
       </BotStoreProvider>
-    </WalletProvider>
+    </PlatformWalletProvider>
   );
 }
