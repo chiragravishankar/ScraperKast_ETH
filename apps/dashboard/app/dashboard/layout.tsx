@@ -3,13 +3,18 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Bot, DollarSign, List, Settings, Zap, Menu, X,
+  LayoutDashboard, Bot, DollarSign, List, Settings, Zap, Menu, X, Wallet,
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import NetworkBadge from '@/components/NetworkBadge';
+import { WalletProvider, useWallet } from '@/lib/walletStore';
+import { formatUsdcDollar, shortenAddress } from '@/lib/formatters';
+
+// ── Navigation items ──────────────────────────────────────────────────────────
 
 const NAV_ITEMS = [
+  { href: '/dashboard/wallet',       label: 'Wallet',       icon: Wallet         },
   { href: '/dashboard',              label: 'Overview',     icon: LayoutDashboard },
   { href: '/dashboard/bots',         label: 'Bots',         icon: Bot             },
   { href: '/dashboard/revenue',      label: 'Revenue',      icon: DollarSign      },
@@ -17,11 +22,15 @@ const NAV_ITEMS = [
   { href: '/dashboard/settings',     label: 'Settings',     icon: Settings        },
 ];
 
-function NavLink({ href, label, icon: Icon, exact = false }: {
-  href: string; label: string; icon: React.ElementType; exact?: boolean;
+// ── NavLink ───────────────────────────────────────────────────────────────────
+
+function NavLink({ href, label, icon: Icon }: {
+  href: string; label: string; icon: React.ElementType;
 }) {
   const pathname = usePathname();
-  const active = exact ? pathname === href : (href === '/dashboard' ? pathname === href : pathname.startsWith(href));
+  const active = href === '/dashboard'
+    ? pathname === href
+    : pathname.startsWith(href);
 
   return (
     <Link
@@ -38,6 +47,27 @@ function NavLink({ href, label, icon: Icon, exact = false }: {
     </Link>
   );
 }
+
+// ── Topbar wallet indicator ───────────────────────────────────────────────────
+
+function WalletIndicator() {
+  const { address, balance, isConnected } = useWallet();
+  if (!isConnected || !address) return null;
+
+  return (
+    <Link
+      href="/dashboard/wallet"
+      className="hidden sm:flex items-center gap-2 text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 hover:border-brand-dark transition-colors"
+      title="Open Wallet"
+    >
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+      <span className="font-mono text-slate-600">{shortenAddress(address)}</span>
+      <span className="font-semibold text-brand-dark tabular-nums">{formatUsdcDollar(balance)}</span>
+    </Link>
+  );
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
 
 function Sidebar({ onClose }: { onClose?: () => void }) {
   return (
@@ -59,7 +89,7 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-thin">
-        {NAV_ITEMS.map((item) => (
+        {NAV_ITEMS.map(item => (
           <NavLink key={item.href} {...item} />
         ))}
       </nav>
@@ -73,7 +103,9 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
   );
 }
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+// ── Inner layout (consumer of WalletProvider) ────────────────────────────────
+
+function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -104,6 +136,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Menu className="w-5 h-5" />
           </button>
           <div className="flex-1" />
+          <WalletIndicator />
           <NetworkBadge />
         </header>
 
@@ -113,5 +146,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
       </div>
     </div>
+  );
+}
+
+// ── Exported layout ───────────────────────────────────────────────────────────
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <WalletProvider>
+      <DashboardLayoutInner>{children}</DashboardLayoutInner>
+    </WalletProvider>
   );
 }
