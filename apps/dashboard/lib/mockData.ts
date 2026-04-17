@@ -36,17 +36,21 @@ export interface RequestEvent {
 }
 
 export interface Transaction {
-  id:           string;
-  timestamp:    Date;
-  botId:        string;
-  botName:      string;
-  domain:       string;
-  basePrice:    number; // µUSDC to owner
-  platformFee:  number; // µUSDC to platform
-  totalPrice:   number;
-  txHash:       string;
-  status:       'confirmed' | 'pending' | 'failed';
-  network:      'devnet' | 'mainnet';
+  id:            string;
+  timestamp:     Date;
+  botId:         string;
+  botName:       string;
+  domain:        string;
+  basePrice:     number; // µUSDC to owner
+  platformFee:   number; // µUSDC to platform
+  totalPrice:    number;
+  txHash:        string;
+  status:        'confirmed' | 'pending' | 'failed';
+  network:       'devnet' | 'mainnet';
+  /** How the bot paid: direct Solana transfer or Dodo credit-card checkout. */
+  paymentMethod: 'solana' | 'dodo';
+  /** Dodo session ID — only present when paymentMethod === 'dodo'. */
+  dodoSessionId?: string;
 }
 
 export interface HourlyPoint {
@@ -234,18 +238,25 @@ export function generateTransactions(count = 50): Transaction[] {
       chars[seededInt(i * 97 + k + 24, 0, chars.length - 1)]
     ).join('');
 
+    const isDodo      = seededRandom(i * 103 + 26) > 0.7; // ~30% Dodo
+    const dodoSession = isDodo
+      ? `dodo_${Array.from({ length: 16 }, (_, k) => chars[seededInt(i * 107 + k, 0, chars.length - 1)]).join('')}`
+      : undefined;
+
     txs.push({
-      id:          `tx-${i + 1}`,
-      timestamp:   new Date(now - msAgo),
-      botId:       `${bot.name.toLowerCase()}-${seededInt(i * 101 + 25, 100, 999)}`,
-      botName:     bot.name,
-      domain:      'example.com',
-      basePrice:   base,
-      platformFee: fee,
-      totalPrice:  base + fee,
-      txHash:      hash,
-      status:      statuses[statusIdx]!,
-      network:     'devnet',
+      id:            `tx-${i + 1}`,
+      timestamp:     new Date(now - msAgo),
+      botId:         `${bot.name.toLowerCase()}-${seededInt(i * 101 + 25, 100, 999)}`,
+      botName:       bot.name,
+      domain:        'example.com',
+      basePrice:     base,
+      platformFee:   fee,
+      totalPrice:    base + fee,
+      txHash:        hash,
+      status:        statuses[statusIdx]!,
+      network:       'devnet',
+      paymentMethod: isDodo ? 'dodo' : 'solana',
+      ...(dodoSession ? { dodoSessionId: dodoSession } : {}),
     });
   }
   return txs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());

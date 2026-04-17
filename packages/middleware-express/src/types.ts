@@ -17,7 +17,33 @@ export interface SolanaPaymentConfig {
   rpcUrl?: string;
 }
 
-// ─── Payment instruction types (included in 402 response) ─────────────────
+// ─── Dodo Payments configuration ─────────────────────────────────────────────
+
+/**
+ * Dodo Payments (credit card → USDC) configuration.
+ * When enabled alongside Solana, bots may choose either:
+ *   A) Direct Solana USDC transfer (crypto-native)
+ *   B) Credit/debit card checkout via Dodo (traditional)
+ */
+export interface DodoPaymentConfig {
+  enabled: boolean;
+  /** Dodo API key from your Dodo dashboard. */
+  apiKey: string;
+  /** Secret used to verify incoming Dodo webhook signatures. */
+  webhookSecret: string;
+  /**
+   * URL Dodo redirects to after a successful payment.
+   * Defaults to `{origin}/payment-success`.
+   */
+  successUrl?: string;
+  /**
+   * URL Dodo redirects to if the user cancels.
+   * Defaults to `{origin}/payment-cancel`.
+   */
+  cancelUrl?: string;
+}
+
+// ─── Payment instruction types (Solana) ──────────────────────────────────────
 
 /** A single SPL-token transfer instruction described for the bot operator. */
 export interface PaymentInstruction {
@@ -34,9 +60,9 @@ export interface PaymentInstruction {
 }
 
 /**
- * Full Solana payment object embedded in a 402 response when Solana is enabled.
- * Bot operators read this, build the transaction, and call POST /verify-payment
- * with the resulting signature.
+ * Solana direct-payment object for a 402 response (Solana-only mode).
+ * When both Solana + Dodo are enabled, this is nested inside
+ * {@link SolanaPaymentOption} within {@link MultiPaymentOptions}.
  */
 export interface PaymentInstructions {
   method: 'solana';
@@ -49,6 +75,31 @@ export interface PaymentInstructions {
   verifyEndpoint: '/verify-payment';
   /** Solana Explorer base URL for the active network. */
   explorerUrl: string;
+}
+
+// ─── Multi-method payment options (Solana + Dodo) ────────────────────────────
+
+/** Solana option within {@link MultiPaymentOptions}. */
+export interface SolanaPaymentOption extends PaymentInstructions {
+  /** Distinguishes direct on-chain transfer from checkout-based options. */
+  type: 'direct';
+}
+
+/** Dodo (credit card) option within {@link MultiPaymentOptions}. */
+export interface DodoPaymentOption {
+  method: 'dodo';
+  type: 'checkout';
+  /** Endpoint the bot calls to get a Dodo checkout URL. */
+  checkoutEndpoint: '/checkout/create';
+  acceptedMethods: ('credit_card' | 'debit_card')[];
+}
+
+/**
+ * Included in 402 responses when both Solana and Dodo are enabled.
+ * Bots choose their preferred payment method from `options`.
+ */
+export interface MultiPaymentOptions {
+  options: (SolanaPaymentOption | DodoPaymentOption)[];
 }
 
 // ─── Verification result ──────────────────────────────────────────────────────
@@ -69,4 +120,36 @@ export interface VerificationResult {
   error?: string;
   /** Extended failure details. */
   details?: string;
+}
+
+// ─── Token retrieval result ───────────────────────────────────────────────────
+
+/** Returned by GET /checkout/:sessionId/token */
+export interface TokenRetrievalResult {
+  success: boolean;
+  /** Signed JWT — present when payment is confirmed. */
+  accessToken?: string;
+  /** Token lifetime in seconds. */
+  expiresIn?: number;
+  /** Solana tx hash — present when payment is confirmed. */
+  txHash?: string;
+  /** Current session status — present when still pending. */
+  status?: string;
+  /** Human-readable message. */
+  message?: string;
+  /** Error reason. */
+  error?: string;
+}
+
+// ─── Checkout session response ────────────────────────────────────────────────
+
+/** Returned by POST /checkout/create */
+export interface CheckoutCreateResponse {
+  checkoutUrl: string;
+  sessionId: string;
+  expiresAt: number;
+  /** Total amount in µUSDC. */
+  amount: number;
+  /** USD equivalent string, e.g. "$0.001050". */
+  amountUSD: string;
 }

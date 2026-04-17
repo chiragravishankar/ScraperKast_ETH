@@ -9,7 +9,7 @@ import 'dotenv/config';
 import express, { type Request, type Response } from 'express';
 import { scraperKast } from '@scraperkast/middleware-express';
 import { detectBot } from '@scraperkast/core';
-import type { SolanaPaymentConfig } from '@scraperkast/middleware-express';
+import type { SolanaPaymentConfig, DodoPaymentConfig } from '@scraperkast/middleware-express';
 
 // ─── ANSI colour helpers ──────────────────────────────────────────────────────
 
@@ -34,6 +34,8 @@ const JWT_SECRET      = process.env['JWT_SECRET'] ?? 'dev-secret-change-in-produ
 const PLATFORM_WALLET = process.env['PLATFORM_WALLET'];
 const OWNER_WALLET    = process.env['OWNER_WALLET'];
 const SOLANA_RPC_URL  = process.env['SOLANA_RPC_URL'];
+const DODO_API_KEY    = process.env['DODO_API_KEY'];
+const DODO_WEBHOOK_SECRET = process.env['DODO_WEBHOOK_SECRET'];
 
 if (JWT_SECRET === 'dev-secret-change-in-production') {
   console.warn(
@@ -92,11 +94,29 @@ if (PLATFORM_WALLET && OWNER_WALLET) {
   );
 }
 
+// ── Build optional Dodo config ────────────────────────────────────────────────
+
+let dodoConfig: DodoPaymentConfig | undefined;
+
+if (DODO_API_KEY && DODO_WEBHOOK_SECRET && solanaConfig) {
+  dodoConfig = {
+    enabled:       true,
+    apiKey:        DODO_API_KEY,
+    webhookSecret: DODO_WEBHOOK_SECRET,
+    successUrl:    `http://localhost:${PORT}/payment-success`,
+    cancelUrl:     `http://localhost:${PORT}/payment-cancel`,
+  };
+  console.log(paint(c.bold + c.cyan, '💳 Dodo Payments enabled — credit card → USDC checkout'));
+} else if (solanaConfig) {
+  console.log(paint(c.yellow, '⚠  Dodo disabled. Set DODO_API_KEY + DODO_WEBHOOK_SECRET to enable.'));
+}
+
 app.use(
   scraperKast({
     jwtSecret:       JWT_SECRET,
     enableAnalytics: true,
     solana:          solanaConfig,
+    dodo:            dodoConfig,
 
     rules: [
       {
@@ -578,6 +598,108 @@ app.get('/free/about', (_req: Request, res: Response) => {
     team: 'Built by indie developers who got tired of AI companies training on their content for free.',
     note: 'This page has no pricing rule — bots are blocked outright (403) because the site owner has not opted in to monetising it. Human visitors see this response.',
   });
+});
+
+// ─── Mock Dodo checkout page ──────────────────────────────────────────────────
+//
+// In production, Dodo hosts the real checkout page. For local development this
+// renders a simple HTML form that simulates the payment flow.
+//
+
+app.get('/mock-checkout', (req: Request, res: Response) => {
+  const { session, amount, usd, botId, domain, successUrl, cancelUrl } = req.query as Record<string, string>;
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Mock Dodo Checkout</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 480px; margin: 80px auto; padding: 20px; }
+  .card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 32px; }
+  h1 { color: #028090; font-size: 1.4rem; margin: 0 0 8px; }
+  .amount { font-size: 2rem; font-weight: 700; color: #1e293b; margin: 16px 0; }
+  .meta { color: #64748b; font-size: 0.875rem; margin-bottom: 24px; }
+  button { width: 100%; padding: 12px; background: #028090; color: white;
+           border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+  button:hover { background: #00A896; }
+  .cancel { display: block; text-align: center; margin-top: 12px; color: #94a3b8; font-size: 0.875rem; }
+</style></head>
+<body>
+<div class="card">
+  <h1>⛓ Mock Dodo Checkout</h1>
+  <p class="meta">This is the development checkout page. In production, Dodo hosts a real credit-card form.</p>
+  <div class="amount">${usd ?? '?'} USD → USDC</div>
+  <div class="meta">
+    Bot: <code>${botId}</code><br>
+    Domain: <code>${domain}</code><br>
+    Session: <code>${session}</code>
+  </div>
+  <form method="POST" action="/mock-checkout/pay">
+    <input type="hidden" name="session"    value="${session}">
+    <input type="hidden" name="amount"     value="${amount}">
+    <input type="hidden" name="successUrl" value="${successUrl ?? ''}">
+    <button type="submit">💳 Pay Now (Simulated)</button>
+  </form>
+  <a class="cancel" href="${cancelUrl ?? '/'}">Cancel</a>
+</div>
+</body></html>`;
+
+  res.setHeader('Content-Type', 'text/html');
+  res.send(html);
+});
+
+app.post('/mock-checkout/pay', express.urlencoded({ extended: false }), async (req: Request, res: Response) => {
+  const { session, amount, successUrl } = req.body as Record<string, string>;
+
+  if (!session || !amount || !DODO_WEBHOOK_SECRET) {
+    res.status(400).send('Missing session/amount or Dodo not configured');
+    return;
+  }
+
+  // Simulate Dodo calling the webhook on our own server.
+  const { DodoPaymentService } = await import('@scraperkast/core');
+  const svc = new DodoPaymentService(
+    DODO_API_KEY ?? 'mock',
+    ((process.env['SOLANA_NETWORK'] ?? 'devnet') === 'mainnet' ? 'mainnet' : 'devnet'),
+    DODO_WEBHOOK_SECRET,
+  );
+
+  const { rawBody, signature } = svc.buildMockWebhookPayload({
+    sessionId:   session,
+    amount:      Number(amount),
+    ownerWallet: OWNER_WALLET ?? '11111111111111111111111111111111',
+  });
+
+  try {
+    await fetch(`http://localhost:${PORT}/webhooks/dodo`, {
+      method:  'POST',
+      headers: {
+        'Content-Type':      'application/json',
+        'x-dodo-signature':  signature,
+      },
+      body: rawBody,
+    });
+    console.log(paint(c.green, `[MockCheckout] Webhook sent for session ${session}`));
+  } catch {
+    console.error(paint(c.red, '[MockCheckout] Failed to send webhook'));
+  }
+
+  // Redirect to success URL or a default page.
+  res.redirect(successUrl || `http://localhost:${PORT}/payment-success?session=${session}`);
+});
+
+// Payment result pages
+app.get('/payment-success', (req: Request, res: Response) => {
+  const { session } = req.query as { session?: string };
+  res.json({
+    message: 'Payment successful! Your bot can now retrieve the access token.',
+    sessionId: session,
+    pollUrl:   session ? `/checkout/${session}/token` : undefined,
+    note: 'Poll the pollUrl every 3-5 seconds to retrieve your JWT access token.',
+  });
+});
+
+app.get('/payment-cancel', (_req: Request, res: Response) => {
+  res.json({ message: 'Payment cancelled. No charges were made.' });
 });
 
 // ─── 404 catch-all ────────────────────────────────────────────────────────────

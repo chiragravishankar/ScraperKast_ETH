@@ -4,14 +4,25 @@ import {
   PricingEngine,
   AuthService,
   AnalyticsCollector,
+  DodoPaymentService,
+  SessionStore,
 } from '@scraperkast/core';
 import type { PricingRule, PriceResult, RequestCounter } from '@scraperkast/core';
 import { SolanaPaymentHandler } from './solanaHandler.js';
 import { createVerifyPaymentRouter } from './routes/verifyPayment.js';
+import { createDodoCheckoutRouter } from './routes/dodoCheckout.js';
+import { createDodoWebhookRouter } from './routes/dodoWebhook.js';
+import { createGetTokenRouter } from './routes/getToken.js';
 import type {
   SolanaPaymentConfig,
+  DodoPaymentConfig,
   PaymentInstructions,
+  SolanaPaymentOption,
+  DodoPaymentOption,
+  MultiPaymentOptions,
   VerificationResult,
+  TokenRetrievalResult,
+  CheckoutCreateResponse,
 } from './types.js';
 
 // ─── Public config interface ──────────────────────────────────────────────────
@@ -22,15 +33,13 @@ export interface ScraperKastConfig {
 
   /**
    * Secret used to verify incoming bot JWT tokens.
-   * Must match the secret used by the ScraperKast payment server that
-   * issued the token.
    */
   jwtSecret: string;
 
   /**
    * Pluggable request counter.  Defaults to an in-memory counter that resets
-   * on restart.  Inject a Redis- or database-backed implementation to enforce
-   * the 10 k free tier globally across multiple servers.
+   * on restart.  Inject a Redis- or database-backed implementation for
+   * globally-consistent free-tier enforcement.
    */
   counter?: RequestCounter;
 
@@ -38,11 +47,20 @@ export interface ScraperKastConfig {
   enableAnalytics?: boolean;
 
   /**
-   * When provided, enables on-chain USDC payment flow via Solana.
-   * 402 responses include payment instructions; POST /verify-payment is mounted
-   * to issue JWTs after successful on-chain payment.
+   * Enables on-chain USDC payment flow via Solana.
+   * Mounts POST /verify-payment when set.
    */
   solana?: SolanaPaymentConfig;
+
+  /**
+   * Enables credit-card → USDC checkout via Dodo Payments.
+   * Mounts POST /checkout/create, POST /webhooks/dodo,
+   * and GET /checkout/:sessionId/token when set.
+   *
+   * Requires `solana` to be configured so the middleware knows which
+   * wallets to route USDC to.
+   */
+  dodo?: DodoPaymentConfig;
 
   /**
    * Called after a bot is allowed through with a valid, credited JWT.
@@ -60,13 +78,11 @@ export interface ScraperKastConfig {
 /**
  * Shape of the JSON body returned with every HTTP 402 response.
  *
- * All monetary amounts are in micro-USDC / micro-dollars (µ):
- *   100 = $0.0001, 1 000 = $0.001, 1 000 000 = $1.00
+ * When only Solana is enabled:
+ *   `payment` = {@link PaymentInstructions} (backward-compatible)
  *
- * When Solana is enabled:
- *  - `currency` is `"USDC"` instead of `"USD_CENTS"`
- *  - `payment` contains the on-chain transfer instructions
- *  - `botId` is populated for the bot to use in POST /verify-payment
+ * When both Solana + Dodo are enabled:
+ *   `payment` = {@link MultiPaymentOptions} with `options` array
  */
 export interface PaymentRequiredBody {
   error: 'Payment Required';
@@ -77,6 +93,8 @@ export interface PaymentRequiredBody {
   scraperKastFee: number;
   totalPrice: number;
   currency: 'USD_CENTS' | 'USDC';
+  /** USD equivalent string — present when Dodo is enabled. */
+  fiatEquivalent?: string;
   licenseType: string;
   tier: 'free' | 'paid';
   requestCount: number;
@@ -85,13 +103,18 @@ export interface PaymentRequiredBody {
     websiteOwner: number;
     scraperKast: number;
   };
-  /** Present when Solana is enabled. */
-  payment?: PaymentInstructions;
-  /** Bot identifier to include in POST /verify-payment. Present when Solana is enabled. */
+  /**
+   * Payment instructions.
+   * - `PaymentInstructions`   — Solana-only mode
+   * - `MultiPaymentOptions`   — Solana + Dodo mode
+   * - absent                  — no Solana config, or free tier
+   */
+  payment?: PaymentInstructions | MultiPaymentOptions;
+  /** Bot identifier for use in /checkout/create and /verify-payment. */
   botId?: string;
-  /** Absolute request number (same as requestCount). Present when Solana is enabled. */
+  /** Same as `requestCount` — present when Solana is enabled. */
   requestNumber?: number;
-  /** Fallback payment URL when Solana is not enabled. */
+  /** Fallback URL — present when Solana is NOT configured. */
   paymentUrl?: string;
 }
 
@@ -118,9 +141,14 @@ function extractBearerToken(req: Request): string | null {
   return token.length > 0 ? token : null;
 }
 
-/** Derive a stable bot identifier from a bot display name. */
 function deriveBotId(botName: string): string {
   return botName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+/** µUSDC → USD display string. */
+function microUsdcToUsd(microUsdc: number): string {
+  const usd = microUsdc / 1_000_000;
+  return usd >= 0.01 ? `$${usd.toFixed(2)}` : `$${usd.toFixed(6)}`;
 }
 
 // ─── Middleware factory ───────────────────────────────────────────────────────
@@ -128,25 +156,28 @@ function deriveBotId(botName: string): string {
 /**
  * ScraperKast Express middleware.
  *
- * Returns an Express `Router` so it can mount the POST /verify-payment
- * endpoint alongside the main interception middleware.  Usage is identical
- * to a plain `RequestHandler`:
- *
+ * Returns an Express `Router`.  Usage is identical to a `RequestHandler`:
  * ```ts
  * app.use(scraperKast({ ... }));
  * ```
  *
- * **Decision flow:**
+ * Mounted endpoints (depending on config):
+ *   POST /verify-payment          — Solana: exchange tx sig for JWT
+ *   POST /checkout/create         — Dodo: create checkout session
+ *   POST /webhooks/dodo           — Dodo: receive payment webhook
+ *   GET  /checkout/:id/token      — Dodo: poll for JWT after payment
+ *
+ * Decision flow:
  * ```
  * Request
- *   │
- *   ├─ POST /verify-payment  → Solana tx verification → JWT
- *   │
- *   ├─ Not a bot?            → next()                          [200]
- *   ├─ Valid JWT + credits?  → onAuthorized → next()           [200]
- *   ├─ No pricing rule?      → 403 Forbidden
- *   └─ Pricing rule found    → onPaymentRequired → 402
- *        └─ Solana enabled + paid tier? → include payment instructions
+ *   ├─ /verify-payment, /checkout/*, /webhooks/*  → payment routes
+ *   ├─ Not a bot?           → next()
+ *   ├─ Valid JWT + credits? → onAuthorized → next()
+ *   ├─ No pricing rule?     → 403 Forbidden
+ *   └─ Pricing rule found   → 402 Payment Required
+ *        ├─ Solana only          → payment = PaymentInstructions
+ *        ├─ Solana + Dodo        → payment = { options: [...] }
+ *        └─ Neither              → paymentUrl (fallback)
  * ```
  */
 export function scraperKast(config: ScraperKastConfig): Router {
@@ -156,6 +187,7 @@ export function scraperKast(config: ScraperKastConfig): Router {
     counter,
     enableAnalytics = false,
     solana,
+    dodo,
     onAuthorized,
     onPaymentRequired,
   } = config;
@@ -164,7 +196,7 @@ export function scraperKast(config: ScraperKastConfig): Router {
   const authService   = new AuthService(jwtSecret);
   const analytics     = enableAnalytics ? new AnalyticsCollector() : null;
 
-  // Initialise Solana handler once (connection is expensive to create).
+  // ── Initialise Solana handler ──────────────────────────────────────────
   let solanaHandler: SolanaPaymentHandler | null = null;
   if (solana?.enabled) {
     solanaHandler = new SolanaPaymentHandler(solana);
@@ -174,14 +206,51 @@ export function scraperKast(config: ScraperKastConfig): Router {
     );
   }
 
+  // ── Initialise Dodo handler ────────────────────────────────────────────
+  let dodoService:   DodoPaymentService | null = null;
+  let sessionStore:  SessionStore | null       = null;
+  let cleanupTimer:  ReturnType<typeof setInterval> | null = null;
+
+  if (dodo?.enabled) {
+    if (!solanaHandler) {
+      throw new Error(
+        '[ScraperKast] Dodo payments require Solana to be configured ' +
+        '(wallet addresses are needed for USDC routing).',
+      );
+    }
+    const network = solana?.network ?? 'devnet';
+    dodoService  = new DodoPaymentService(dodo.apiKey, network, dodo.webhookSecret);
+    sessionStore = new SessionStore();
+
+    // Prune expired sessions every 5 minutes.
+    cleanupTimer = setInterval(() => {
+      const removed = sessionStore!.cleanup();
+      if (removed > 0) console.log(`[Dodo] Cleaned up ${removed} expired session(s)`);
+    }, 5 * 60 * 1000);
+
+    // Allow GC — don't keep the process alive just for cleanup.
+    if (cleanupTimer.unref) cleanupTimer.unref();
+
+    console.log(
+      `[ScraperKast] Dodo payments enabled — ` +
+      `checkout=POST /checkout/create webhook=POST /webhooks/dodo`,
+    );
+  }
+
   const router = Router();
 
-  // ── Mount POST /verify-payment when Solana is enabled ────────────────────
+  // ── Mount payment sub-routes ───────────────────────────────────────────
   if (solanaHandler) {
     router.use(createVerifyPaymentRouter(solanaHandler, authService));
   }
 
-  // ── Main interception middleware ─────────────────────────────────────────
+  if (dodoService && sessionStore && solanaHandler) {
+    router.use(createDodoCheckoutRouter(dodoService, sessionStore, solanaHandler, dodo!));
+    router.use(createDodoWebhookRouter(dodoService, sessionStore, authService));
+    router.use(createGetTokenRouter(sessionStore));
+  }
+
+  // ── Main interception middleware ───────────────────────────────────────
   router.use(function scraperKastMiddleware(
     req: Request,
     res: Response,
@@ -192,7 +261,7 @@ export function scraperKast(config: ScraperKastConfig): Router {
         const userAgent = req.headers['user-agent'] ?? '';
         const detection = detectBot(userAgent);
 
-        // ── Not a bot → pass straight through ────────────────────────────
+        // ── Not a bot ─────────────────────────────────────────────────────
         if (!detection.isBot || detection.botName === null) {
           next();
           return;
@@ -202,7 +271,7 @@ export function scraperKast(config: ScraperKastConfig): Router {
         const botType = detection.type ?? 'unknown';
         const { path } = req;
 
-        // ── Bot detected → check for a valid JWT ──────────────────────────
+        // ── Valid JWT? ────────────────────────────────────────────────────
         const rawToken = extractBearerToken(req);
         let jwtBotId: string | undefined;
 
@@ -213,24 +282,18 @@ export function scraperKast(config: ScraperKastConfig): Router {
             jwtBotId = payload.botId;
             analytics?.trackAccess(botName, path, true, undefined);
 
-            try {
-              onAuthorized?.(req, botName);
-            } catch {
-              // Never let a callback crash the middleware.
-            }
+            try { onAuthorized?.(req, botName); } catch { /* never crash */ }
 
             next();
             return;
           }
-          // Invalid / expired / zero-credit token → fall through to pricing.
         }
 
-        // ── No valid token → consult pricing rules ────────────────────────
+        // ── Pricing ───────────────────────────────────────────────────────
         const priceResult = await pricingEngine.getPrice(path, botName, jwtBotId);
 
         if (priceResult === null) {
           analytics?.trackAccess(botName, path, false);
-
           const body: ForbiddenBody = {
             error:   'Forbidden',
             message: `Bot "${botName}" is not permitted to access ${path}`,
@@ -239,20 +302,45 @@ export function scraperKast(config: ScraperKastConfig): Router {
           return;
         }
 
-        // ── Pricing rule found → 402 Payment Required ─────────────────────
+        // ── 402 Payment Required ──────────────────────────────────────────
         analytics?.trackPaymentRequired(botName, path, priceResult.totalPrice);
         analytics?.trackAccess(botName, path, false, undefined);
 
-        try {
-          onPaymentRequired?.(req, priceResult);
-        } catch {
-          // Never let a callback crash the middleware.
-        }
+        try { onPaymentRequired?.(req, priceResult); } catch { /* never crash */ }
 
-        const usingSolana = solanaHandler !== null && priceResult.tier === 'paid';
+        const hasSolana   = solanaHandler !== null && priceResult.tier === 'paid';
+        const hasDodo     = dodoService   !== null && priceResult.tier === 'paid';
+        const useSolana   = hasSolana;
         const effectiveBotId = jwtBotId ?? deriveBotId(botName);
 
-        // Build 402 body.
+        // Build the `payment` field.
+        let paymentField: PaymentInstructions | MultiPaymentOptions | undefined;
+
+        if (useSolana && hasDodo) {
+          // Both methods — return options array.
+          const solanaOption: SolanaPaymentOption = {
+            ...solanaHandler!.generatePaymentInstructions(
+              priceResult,
+              effectiveBotId,
+              req.hostname,
+            ),
+            type: 'direct',
+          };
+          const dodoOption: DodoPaymentOption = {
+            method:           'dodo',
+            type:             'checkout',
+            checkoutEndpoint: '/checkout/create',
+            acceptedMethods:  ['credit_card', 'debit_card'],
+          };
+          paymentField = { options: [solanaOption, dodoOption] } satisfies MultiPaymentOptions;
+        } else if (useSolana) {
+          // Solana only — original format.
+          paymentField = solanaHandler!.generatePaymentInstructions(
+            priceResult, effectiveBotId, req.hostname,
+          );
+        }
+        // else: no Solana → paymentUrl fallback below.
+
         const body: PaymentRequiredBody = {
           error:          'Payment Required',
           bot:            botName,
@@ -261,7 +349,8 @@ export function scraperKast(config: ScraperKastConfig): Router {
           basePrice:      priceResult.basePrice,
           scraperKastFee: priceResult.scraperKastFee,
           totalPrice:     priceResult.totalPrice,
-          currency:       usingSolana ? 'USDC' : 'USD_CENTS',
+          currency:       useSolana ? 'USDC' : 'USD_CENTS',
+          ...(hasDodo ? { fiatEquivalent: microUsdcToUsd(priceResult.totalPrice) } : {}),
           licenseType:    priceResult.licenseType,
           tier:           priceResult.tier,
           requestCount:   priceResult.requestCount,
@@ -272,22 +361,15 @@ export function scraperKast(config: ScraperKastConfig): Router {
             websiteOwner: priceResult.basePrice,
             scraperKast:  priceResult.scraperKastFee,
           },
-          ...(usingSolana
-            ? {
-                payment:       solanaHandler!.generatePaymentInstructions(
-                  priceResult,
-                  effectiveBotId,
-                  req.hostname,
-                ),
-                botId:         effectiveBotId,
-                requestNumber: priceResult.requestCount,
-              }
+          ...(paymentField
+            ? { payment: paymentField, botId: effectiveBotId, requestNumber: priceResult.requestCount }
             : { paymentUrl: buildPaymentUrl(botName, path) }),
         };
 
-        if (usingSolana) {
+        if (useSolana) {
+          const mode = hasDodo ? 'Solana+Dodo' : 'Solana';
           console.log(
-            `[ScraperKast] 402 Solana payment required — ` +
+            `[ScraperKast] 402 [${mode}] — ` +
             `bot=${botName} path=${path} ` +
             `base=${priceResult.basePrice}µUSDC fee=${priceResult.scraperKastFee}µUSDC`,
           );
@@ -304,7 +386,10 @@ export function scraperKast(config: ScraperKastConfig): Router {
 }
 
 // ─── Re-exports ───────────────────────────────────────────────────────────────
-export { AnalyticsCollector };
-export type { PricingRule, PriceResult, RequestCounter };
-export type { SolanaPaymentConfig, PaymentInstructions, VerificationResult };
-export { SolanaPaymentHandler };
+export { AnalyticsCollector, SolanaPaymentHandler };
+export type {
+  PricingRule, PriceResult, RequestCounter,
+  SolanaPaymentConfig, DodoPaymentConfig,
+  PaymentInstructions, MultiPaymentOptions, SolanaPaymentOption, DodoPaymentOption,
+  VerificationResult, TokenRetrievalResult, CheckoutCreateResponse,
+};

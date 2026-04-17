@@ -1,7 +1,7 @@
 import { formatUsdcDollar, shortenHash, timeAgo, explorerUrl } from '@/lib/formatters';
 import CopyButton from '@/components/CopyButton';
 import type { Transaction } from '@/lib/mockData';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Wallet, CreditCard } from 'lucide-react';
 
 const STATUS_STYLES: Record<Transaction['status'], string> = {
   confirmed: 'bg-emerald-100 text-emerald-700',
@@ -16,14 +16,59 @@ async function getTransactions(): Promise<Transaction[]> {
   return data.transactions;
 }
 
+function PaymentMethodBadge({ method, sessionId }: { method: Transaction['paymentMethod']; sessionId?: string }) {
+  if (method === 'dodo') {
+    return (
+      <div className="flex items-center gap-1">
+        <span className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700">
+          <CreditCard className="w-3 h-3" />
+          Card
+        </span>
+        {sessionId && (
+          <span className="font-mono text-[10px] text-slate-400 truncate max-w-[80px]" title={sessionId}>
+            {sessionId.slice(0, 10)}…
+          </span>
+        )}
+      </div>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-sky-100 text-sky-700">
+      <Wallet className="w-3 h-3" />
+      Solana
+    </span>
+  );
+}
+
 export default async function TransactionsPage() {
   const transactions = await getTransactions();
+
+  const solanaCount = transactions.filter((t) => t.paymentMethod === 'solana').length;
+  const dodoCount   = transactions.filter((t) => t.paymentMethod === 'dodo').length;
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-xl font-bold text-slate-900">Transactions</h1>
         <p className="text-sm text-slate-500 mt-0.5">On-chain USDC payment records from Solana</p>
+      </div>
+
+      {/* Payment method summary */}
+      <div className="flex gap-3">
+        <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm">
+          <span className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-sky-100 text-sky-700">
+            <Wallet className="w-3 h-3" /> Solana
+          </span>
+          <span className="font-semibold text-slate-700">{solanaCount}</span>
+          <span className="text-slate-400">direct</span>
+        </div>
+        <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm">
+          <span className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700">
+            <CreditCard className="w-3 h-3" /> Dodo
+          </span>
+          <span className="font-semibold text-slate-700">{dodoCount}</span>
+          <span className="text-slate-400">credit card</span>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
@@ -33,6 +78,7 @@ export default async function TransactionsPage() {
               <tr className="border-b border-slate-100 text-left">
                 <th className="px-4 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Tx Hash</th>
                 <th className="px-4 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Bot</th>
+                <th className="px-4 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Method</th>
                 <th className="px-4 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide text-right">Amount</th>
                 <th className="px-4 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide text-right">Platform Fee</th>
                 <th className="px-4 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Status</th>
@@ -52,6 +98,9 @@ export default async function TransactionsPage() {
                   <td className="px-4 py-3.5">
                     <div className="font-medium text-slate-800">{tx.botName}</div>
                     <div className="text-xs text-slate-400 font-mono">{tx.botId}</div>
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <PaymentMethodBadge method={tx.paymentMethod} sessionId={tx.dodoSessionId} />
                   </td>
                   <td className="px-4 py-3.5 text-right font-semibold text-brand-dark font-mono">
                     {formatUsdcDollar(tx.basePrice)}
