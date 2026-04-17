@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import NetworkBadge from '@/components/NetworkBadge';
 import { WalletProvider, useWallet } from '@/lib/walletStore';
+import { BotStoreProvider } from '@/lib/botStore';
 import { formatUsdcDollar, shortenAddress } from '@/lib/formatters';
 
 // ── Navigation items ──────────────────────────────────────────────────────────
@@ -154,7 +155,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <WalletProvider>
-      <DashboardLayoutInner>{children}</DashboardLayoutInner>
+      <BotStoreProvider>
+        <DashboardLayoutInner>{children}</DashboardLayoutInner>
+      </BotStoreProvider>
     </WalletProvider>
   );
 }

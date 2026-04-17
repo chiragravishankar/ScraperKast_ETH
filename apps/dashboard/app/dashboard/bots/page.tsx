@@ -1,3 +1,5 @@
+import Link from 'next/link';
+import { Settings2, Users, Shield } from 'lucide-react';
 import { formatUsdcDollar, timeAgo, compactNumber } from '@/lib/formatters';
 import type { BotSummary } from '@/lib/mockData';
 
@@ -27,16 +29,33 @@ export default async function BotsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-xl font-bold text-slate-900">Bots</h1>
-        <p className="text-sm text-slate-500 mt-0.5">{bots.length} bots detected on your site</p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">Bots</h1>
+          <p className="text-sm text-slate-500 mt-0.5">{bots.length} bots detected on your site</p>
+        </div>
+        {/* Quick links to management sub-pages */}
+        <div className="flex items-center gap-2">
+          <Link href="/dashboard/bots/manage"
+            className="flex items-center gap-1.5 text-sm font-semibold bg-brand-dark text-white px-3 py-2 rounded-xl hover:bg-brand-mid transition-colors">
+            <Settings2 className="w-4 h-4" /> Manage
+          </Link>
+          <Link href="/dashboard/bots/groups"
+            className="flex items-center gap-1.5 text-sm font-medium border border-slate-200 rounded-xl px-3 py-2 text-slate-600 hover:bg-slate-50 transition-colors">
+            <Users className="w-4 h-4" /> Groups
+          </Link>
+          <Link href="/dashboard/bots/whitelist"
+            className="flex items-center gap-1.5 text-sm font-medium border border-slate-200 rounded-xl px-3 py-2 text-slate-600 hover:bg-slate-50 transition-colors">
+            <Shield className="w-4 h-4" /> Lists
+          </Link>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-100 text-left">
+              <tr className="border-b border-slate-100 text-left bg-slate-50">
                 <th className="px-4 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Bot</th>
                 <th className="px-4 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Type</th>
                 <th className="px-4 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide text-right">Requests</th>
@@ -80,6 +99,12 @@ export default async function BotsPage() {
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="px-4 py-3 border-t border-slate-100 bg-slate-50">
+          <Link href="/dashboard/bots/manage"
+            className="text-sm font-semibold text-brand-dark hover:text-brand-mid transition-colors">
+            Manage bot permissions &amp; pricing →
+          </Link>
         </div>
       </div>
     </div>
