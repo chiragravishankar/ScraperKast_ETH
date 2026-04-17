@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Bot, DollarSign, List, Settings, Zap, Menu, X, Wallet,
+  LayoutDashboard, Bot, DollarSign, List, Settings, Zap, Menu, X, Wallet, Sliders,
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import NetworkBadge from '@/components/NetworkBadge';
 import { WalletProvider, useWallet } from '@/lib/walletStore';
 import { BotStoreProvider } from '@/lib/botStore';
+import { PricingStoreProvider } from '@/lib/pricingStore';
 import { formatUsdcDollar, shortenAddress } from '@/lib/formatters';
 
 // ── Navigation items ──────────────────────────────────────────────────────────
@@ -18,6 +19,7 @@ const NAV_ITEMS = [
   { href: '/dashboard/wallet',       label: 'Wallet',       icon: Wallet         },
   { href: '/dashboard',              label: 'Overview',     icon: LayoutDashboard },
   { href: '/dashboard/bots',         label: 'Bots',         icon: Bot             },
+  { href: '/dashboard/pricing',      label: 'Pricing',      icon: Sliders         },
   { href: '/dashboard/revenue',      label: 'Revenue',      icon: DollarSign      },
   { href: '/dashboard/transactions', label: 'Transactions', icon: List            },
   { href: '/dashboard/settings',     label: 'Settings',     icon: Settings        },
@@ -156,7 +158,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <WalletProvider>
       <BotStoreProvider>
-        <DashboardLayoutInner>{children}</DashboardLayoutInner>
+        <PricingStoreProvider>
+          <DashboardLayoutInner>{children}</DashboardLayoutInner>
+        </PricingStoreProvider>
       </BotStoreProvider>
     </WalletProvider>
   );
