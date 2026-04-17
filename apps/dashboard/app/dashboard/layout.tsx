@@ -8,10 +8,10 @@ import {
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import NetworkBadge from '@/components/NetworkBadge';
-import { PlatformWalletProvider, usePlatformWallet } from '@/lib/walletStore';
+import { WalletProvider, useWallet } from '@/lib/walletStore';
 import { BotStoreProvider } from '@/lib/botStore';
 import { PricingStoreProvider } from '@/lib/pricingStore';
-import { formatUsdcDollar, shortenAddress } from '@/lib/formatters';
+import { formatUsdcDollar } from '@/lib/formatters';
 
 // ── Navigation items ──────────────────────────────────────────────────────────
 
@@ -54,8 +54,7 @@ function NavLink({ href, label, icon: Icon }: {
 // ── Topbar wallet indicator ───────────────────────────────────────────────────
 
 function WalletIndicator() {
-  const { address, balance, isConnected } = usePlatformWallet();
-  if (!isConnected || !address) return null;
+  const { balance, isLoading } = useWallet();
 
   return (
     <Link
@@ -64,8 +63,9 @@ function WalletIndicator() {
       title="Open Wallet"
     >
       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-      <span className="font-mono text-slate-600">{shortenAddress(address)}</span>
-      <span className="font-semibold text-brand-dark tabular-nums">{formatUsdcDollar(balance)}</span>
+      <span className={`font-semibold text-brand-dark tabular-nums ${isLoading ? 'opacity-40' : ''}`}>
+        {formatUsdcDollar(balance)} USDC
+      </span>
     </Link>
   );
 }
@@ -156,12 +156,12 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <PlatformWalletProvider>
+    <WalletProvider>
       <BotStoreProvider>
         <PricingStoreProvider>
           <DashboardLayoutInner>{children}</DashboardLayoutInner>
         </PricingStoreProvider>
       </BotStoreProvider>
-    </PlatformWalletProvider>
+    </WalletProvider>
   );
 }

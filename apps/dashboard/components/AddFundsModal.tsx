@@ -1,39 +1,64 @@
 'use client';
 
 import { useState } from 'react';
-import { X, CreditCard, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import {
+  X, CreditCard, Loader2, CheckCircle, AlertCircle,
+  Wallet, Copy, Check,
+} from 'lucide-react';
+import { useWallet } from '@/lib/walletStore';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const PRESETS = [10, 25, 50, 100, 250, 500];
-const MIN_DEPOSIT = 1;
+const CARD_FEE_PCT  = 0.029;
+const CARD_FEE_FLAT = 0.30;
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-type Step = 'form' | 'loading' | 'redirected';
+function cardNet(amount: number) {
+  return Math.max(0, amount - amount * CARD_FEE_PCT - CARD_FEE_FLAT);
+}
+
+// ── AddFundsModal ─────────────────────────────────────────────────────────────
+
+type Tab  = 'crypto' | 'card';
+type Step = 'form' | 'loading' | 'success';
 
 interface AddFundsModalProps {
   onClose: () => void;
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
-
 export default function AddFundsModal({ onClose }: AddFundsModalProps) {
+  const { smartWalletAddress } = useWallet();
+  const [tab,       setTab]       = useState<Tab>('crypto');
   const [amountStr, setAmountStr] = useState('');
   const [step,      setStep]      = useState<Step>('form');
+  const [copied,    setCopied]    = useState(false);
   const [sessionId, setSessionId] = useState('');
 
   const amount  = parseFloat(amountStr) || 0;
-  const isValid = amount >= MIN_DEPOSIT;
 
-  async function handleAddFunds() {
+  function copyAddress() {
+    navigator.clipboard.writeText(smartWalletAddress).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2_000);
+  }
+
+  async function handleCardDeposit() {
+    if (amount < 1) return;
     setStep('loading');
-    // Simulate Dodo checkout session creation (~800 ms network call)
-    await new Promise(r => setTimeout(r, 800));
-    // In production: POST /api/wallet/checkout → get { checkoutUrl, sessionId }
-    //                then window.location.href = checkoutUrl
-    setSessionId(`dodo_${Math.random().toString(36).slice(2, 18)}`);
-    setStep('redirected');
+    try {
+      const res  = await fetch('/api/wallet/deposit/card', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ amountUsd: amount }),
+      });
+      const data = await res.json() as { sessionId?: string };
+      setSessionId(data.sessionId ?? '');
+      setStep('success');
+    } catch {
+      setStep('form');
+    }
   }
 
   return (
@@ -42,28 +67,113 @@ export default function AddFundsModal({ onClose }: AddFundsModalProps) {
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <CreditCard className="w-5 h-5 text-violet-600" />
-            <h2 className="font-semibold text-slate-900">Add Funds via Card</h2>
-          </div>
+          <h2 className="font-semibold text-slate-900">Add Funds</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
+        {/* Tabs */}
+        <div className="flex border-b border-slate-100">
+          {([
+            { id: 'crypto', label: 'Crypto (USDC)',  icon: Wallet     },
+            { id: 'card',   label: 'Credit / Debit', icon: CreditCard },
+          ] as { id: Tab; label: string; icon: React.ElementType }[]).map(t => (
+            <button
+              key={t.id}
+              onClick={() => { setTab(t.id); setStep('form'); setAmountStr(''); }}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium border-b-2 transition-colors ${
+                tab === t.id
+                  ? 'border-brand-dark text-brand-dark'
+                  : 'border-transparent text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <t.icon className="w-4 h-4" />
+              {t.label}
+            </button>
+          ))}
+        </div>
+
         <div className="px-6 py-5">
 
-          {/* ── Form ── */}
-          {step === 'form' && (
+          {/* ══ CRYPTO TAB ══════════════════════════════════════════════════ */}
+          {tab === 'crypto' && (
             <div className="space-y-5">
               <p className="text-sm text-slate-500">
-                Purchase USDC with your credit or debit card via Dodo Payments. Funds settle instantly to your platform balance.
+                Send USDC to your ScraperKast wallet address below. Funds appear
+                within ~30 seconds after on-chain confirmation.
               </p>
 
-              {/* Preset amounts */}
+              {/* Address card */}
+              <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                    Your Deposit Address
+                  </span>
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-sky-100 text-sky-700">
+                    Devnet · USDC
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 bg-white rounded-lg border border-slate-200 px-3 py-2.5">
+                  <span className="flex-1 font-mono text-xs text-slate-700 break-all leading-relaxed">
+                    {smartWalletAddress}
+                  </span>
+                  <button
+                    onClick={copyAddress}
+                    className="shrink-0 p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-brand-dark transition-colors"
+                    title="Copy address"
+                  >
+                    {copied
+                      ? <Check className="w-4 h-4 text-emerald-500" />
+                      : <Copy className="w-4 h-4" />
+                    }
+                  </button>
+                </div>
+
+                {copied && (
+                  <p className="text-xs text-emerald-600 font-medium">Address copied!</p>
+                )}
+              </div>
+
+              {/* Instructions */}
+              <div className="space-y-2 text-sm text-slate-600">
+                <div className="flex gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-brand-dark/10 text-brand-dark text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
+                  <p>Open your Solana wallet (Phantom, Solflare, etc.)</p>
+                </div>
+                <div className="flex gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-brand-dark/10 text-brand-dark text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
+                  <p>Send USDC to the address above on the Solana network</p>
+                </div>
+                <div className="flex gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-brand-dark/10 text-brand-dark text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
+                  <p>Your balance updates automatically after ~30 seconds</p>
+                </div>
+              </div>
+
+              <div className="flex gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                <p><strong>Only send USDC on Solana.</strong> Sending other tokens or using other networks will result in permanent loss.</p>
+              </div>
+
+              <button onClick={onClose} className="w-full py-2.5 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 transition-colors">
+                Done
+              </button>
+            </div>
+          )}
+
+          {/* ══ CARD TAB ════════════════════════════════════════════════════ */}
+          {tab === 'card' && step === 'form' && (
+            <div className="space-y-5">
+              <p className="text-sm text-slate-500">
+                Purchase USDC with your credit or debit card. Funds settle instantly to your wallet.
+              </p>
+
+              {/* Presets */}
               <div>
                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                  Select Amount (USD)
+                  Amount (USD)
                 </label>
                 <div className="mt-2 grid grid-cols-3 gap-2">
                   {PRESETS.map(p => (
@@ -82,16 +192,16 @@ export default function AddFundsModal({ onClose }: AddFundsModalProps) {
                 </div>
               </div>
 
-              {/* Custom amount */}
+              {/* Custom */}
               <div>
                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                  Or enter custom amount
+                  Custom amount
                 </label>
                 <div className="mt-1.5 relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
                   <input
                     type="number"
-                    min={MIN_DEPOSIT}
+                    min={1}
                     step="1"
                     placeholder="0.00"
                     value={amountStr}
@@ -106,65 +216,61 @@ export default function AddFundsModal({ onClose }: AddFundsModalProps) {
                 <div className="bg-violet-50 border border-violet-100 rounded-xl px-4 py-3 space-y-1.5 text-sm">
                   <div className="flex justify-between">
                     <span className="text-slate-500">You pay</span>
-                    <span className="font-mono font-semibold">${amount.toFixed(2)} USD</span>
+                    <span className="font-mono font-semibold">${amount.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">You receive</span>
-                    <span className="font-mono font-semibold text-violet-700">{amount.toFixed(2)} USDC</span>
+                  <div className="flex justify-between text-slate-400">
+                    <span>Processing fee (2.9% + $0.30)</span>
+                    <span className="font-mono">−${(amount - cardNet(amount)).toFixed(2)}</span>
                   </div>
-                  <p className="text-xs text-slate-400 pt-0.5">
-                    Powered by Dodo Payments · 1 USDC = $1.00 · No hidden fees
-                  </p>
+                  <div className="flex justify-between font-semibold border-t border-violet-200 pt-1.5">
+                    <span className="text-slate-700">You receive</span>
+                    <span className="font-mono text-violet-700">{cardNet(amount).toFixed(2)} USDC</span>
+                  </div>
+                  <p className="text-xs text-slate-400 pt-0.5">Powered by Stripe · 1 USDC = $1.00</p>
                 </div>
               )}
 
-              {/* Min deposit error */}
-              {!isValid && amount > 0 && (
+              {amount > 0 && amount < 1 && (
                 <p className="text-sm text-red-600 flex items-center gap-1.5">
                   <AlertCircle className="w-4 h-4" /> Minimum deposit is $1.00
                 </p>
               )}
 
               <button
-                onClick={handleAddFunds}
-                disabled={!isValid}
+                onClick={() => { void handleCardDeposit(); }}
+                disabled={amount < 1}
                 className="w-full py-3 bg-violet-600 text-white font-semibold rounded-xl hover:bg-violet-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <CreditCard className="w-4 h-4" />
                 Pay ${amount > 0 ? amount.toFixed(2) : '0.00'} with Card
               </button>
-
-              <p className="text-center text-xs text-slate-400">
-                You&apos;ll be redirected to Dodo&apos;s secure checkout page.
-                Your balance updates automatically after payment.
-              </p>
             </div>
           )}
 
-          {/* ── Loading ── */}
-          {step === 'loading' && (
+          {tab === 'card' && step === 'loading' && (
             <div className="py-10 flex flex-col items-center gap-4">
               <Loader2 className="w-10 h-10 text-violet-600 animate-spin" />
               <div className="text-center">
                 <p className="font-semibold text-slate-800">Creating checkout session…</p>
-                <p className="text-sm text-slate-500 mt-1">Connecting to Dodo Payments</p>
+                <p className="text-sm text-slate-500 mt-1">Connecting to Stripe</p>
               </div>
             </div>
           )}
 
-          {/* ── Redirected (demo) ── */}
-          {step === 'redirected' && (
+          {tab === 'card' && step === 'success' && (
             <div className="py-6 flex flex-col items-center gap-4 text-center">
               <CheckCircle className="w-12 h-12 text-emerald-500" />
               <div>
                 <p className="font-semibold text-slate-800 text-lg">Checkout session ready!</p>
                 <p className="text-sm text-slate-500 mt-1">
-                  In production you&apos;d be redirected to Dodo&apos;s hosted checkout.
-                  After payment, your balance updates automatically via webhook.
+                  In production you&apos;d be redirected to Stripe&apos;s hosted checkout.
+                  After payment, USDC is transferred to your wallet automatically.
                 </p>
-                <p className="mt-3 text-xs font-mono text-slate-400 bg-slate-50 rounded-lg px-3 py-2 break-all">
-                  {sessionId}
-                </p>
+                {sessionId && (
+                  <p className="mt-3 text-xs font-mono text-slate-400 bg-slate-50 rounded-lg px-3 py-2 break-all">
+                    {sessionId}
+                  </p>
+                )}
               </div>
               <button
                 onClick={onClose}
