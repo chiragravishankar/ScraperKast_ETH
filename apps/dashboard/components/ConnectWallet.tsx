@@ -12,7 +12,7 @@ const WALLET_UI: Record<string, { bgColor: string; textColor: string }> = {
   Solflare: { bgColor: 'bg-orange-100', textColor: 'text-orange-600' },
 };
 
-const DEFAULT_UI = { bgColor: 'bg-slate-100', textColor: 'text-slate-600' };
+const DEFAULT_UI = { bgColor: 'bg-slate-100', textColor: 'text-ink-2' };
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -47,7 +47,7 @@ export default function ConnectWallet({ onConnected }: ConnectWalletProps) {
         <CheckCircle className="w-10 h-10 text-emerald-500" />
         <div className="text-center">
           <p className="font-semibold text-slate-800">Wallet connected!</p>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-ink-2 mt-1">
             {activeWallet?.adapter.name} · Devnet
           </p>
         </div>
@@ -57,7 +57,7 @@ export default function ConnectWallet({ onConnected }: ConnectWalletProps) {
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-ink-2">
         Connect a Solana wallet to withdraw earnings directly on-chain.
       </p>
 
@@ -76,7 +76,7 @@ export default function ConnectWallet({ onConnected }: ConnectWalletProps) {
                 key={w.adapter.name}
                 onClick={() => handleSelect(w.adapter.name as WalletName)}
                 disabled={connecting}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-200 bg-white hover:border-brand-dark hover:bg-slate-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-edge bg-white hover:border-brand-dark hover:bg-canvas transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
               >
                 {w.adapter.icon ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
@@ -93,7 +93,7 @@ export default function ConnectWallet({ onConnected }: ConnectWalletProps) {
                 {isConnecting ? (
                   <Loader2 className="w-4 h-4 text-brand-dark animate-spin shrink-0" />
                 ) : (
-                  <span className="text-xs text-slate-400 group-hover:text-brand-dark transition-colors">
+                  <span className="text-xs text-ink-3 group-hover:text-brand-dark transition-colors">
                     Connect →
                   </span>
                 )}
@@ -107,7 +107,7 @@ export default function ConnectWallet({ onConnected }: ConnectWalletProps) {
       {notInstalledWallets.length > 0 && (
         <div className="space-y-2">
           {detectedWallets.length > 0 && (
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide pt-1">
+            <p className="text-xs font-semibold text-ink-3 uppercase tracking-wide pt-1">
               Not installed
             </p>
           )}
@@ -119,7 +119,7 @@ export default function ConnectWallet({ onConnected }: ConnectWalletProps) {
                 href={w.adapter.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-dashed border-slate-200 bg-white hover:border-brand-dark/40 hover:bg-slate-50 transition-all group"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-dashed border-edge bg-white hover:border-brand-dark/40 hover:bg-canvas transition-all group"
               >
                 {w.adapter.icon ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
@@ -130,10 +130,10 @@ export default function ConnectWallet({ onConnected }: ConnectWalletProps) {
                   </span>
                 )}
                 <div className="flex-1 text-left">
-                  <p className="text-sm font-semibold text-slate-600">{w.adapter.name}</p>
-                  <p className="text-xs text-slate-400">Not installed — click to install</p>
+                  <p className="text-sm font-semibold text-ink-2">{w.adapter.name}</p>
+                  <p className="text-xs text-ink-3">Not installed — click to install</p>
                 </div>
-                <ExternalLink className="w-3.5 h-3.5 text-slate-300 group-hover:text-brand-dark transition-colors shrink-0" />
+                <ExternalLink className="w-3.5 h-3.5 text-edge group-hover:text-brand-dark transition-colors shrink-0" />
               </a>
             );
           })}
@@ -142,7 +142,7 @@ export default function ConnectWallet({ onConnected }: ConnectWalletProps) {
 
       {wallets.length === 0 && (
         <div className="text-center py-4">
-          <p className="text-sm text-slate-500 mb-3">
+          <p className="text-sm text-ink-2 mb-3">
             No Solana wallet extension found.
           </p>
           <a
@@ -156,7 +156,7 @@ export default function ConnectWallet({ onConnected }: ConnectWalletProps) {
         </div>
       )}
 
-      <p className="text-center text-xs text-slate-400 pt-1">
+      <p className="text-center text-xs text-ink-3 pt-1">
         Need a wallet?{' '}
         <a
           href="https://phantom.app"

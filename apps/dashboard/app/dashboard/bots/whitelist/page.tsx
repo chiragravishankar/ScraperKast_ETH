@@ -33,9 +33,9 @@ function BotList({
   });
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col">
+    <div className="card overflow-hidden flex flex-col">
       {/* Header */}
-      <div className={`px-5 py-4 border-b border-slate-100 flex items-center justify-between ${accentClass}`}>
+      <div className={`px-5 py-4 border-b border-edge-2 flex items-center justify-between ${accentClass}`}>
         <div className="flex items-center gap-2">
           <Icon className="w-4 h-4" />
           <h2 className="font-bold text-base">{title}</h2>
@@ -49,22 +49,22 @@ function BotList({
 
       {/* Picker dropdown */}
       {showPicker && (
-        <div className="border-b border-slate-100 p-3 bg-slate-50">
+        <div className="border-b border-edge-2 p-3 bg-canvas">
           <div className="relative mb-2">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-3" />
             <input type="text" placeholder="Search bots…" value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full pl-8 pr-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark bg-white" />
+              className="w-full pl-8 pr-3 py-2 rounded-lg border border-edge text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark bg-white" />
           </div>
           <div className="max-h-36 overflow-y-auto space-y-0.5">
             {pickerBots.slice(0, 10).map(b => (
               <button key={b.id} onClick={() => { onAdd(b.id); setSearch(''); setShowPicker(false); }}
                 className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white text-sm transition-colors">
                 <span className="font-medium text-slate-800">{b.name}</span>
-                <span className="text-xs text-slate-400">{b.company}</span>
+                <span className="text-xs text-ink-3">{b.company}</span>
               </button>
             ))}
             {pickerBots.length === 0 && (
-              <p className="text-xs text-slate-400 text-center py-2">All bots added</p>
+              <p className="text-xs text-ink-3 text-center py-2">All bots added</p>
             )}
           </div>
         </div>
@@ -73,26 +73,26 @@ function BotList({
       {/* List */}
       <div className="flex-1 divide-y divide-slate-50">
         {bots.length === 0 ? (
-          <div className="px-5 py-10 text-center text-slate-400 text-sm">
+          <div className="px-5 py-10 text-center text-ink-3 text-sm">
             <p>{emptyMsg}</p>
           </div>
         ) : bots.map(bot => (
-          <div key={bot.id} className="px-5 py-3.5 flex items-start gap-3 hover:bg-slate-50 transition-colors group">
+          <div key={bot.id} className="px-5 py-3.5 flex items-start gap-3 hover:bg-canvas transition-colors group">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-semibold text-slate-800 text-sm">{bot.name}</span>
-                <span className="text-xs text-slate-400">{bot.company}</span>
+                <span className="text-xs text-ink-3">{bot.company}</span>
                 {bot.docUrl && (
                   <a href={bot.docUrl} target="_blank" rel="noopener noreferrer"
-                    className="text-slate-300 hover:text-brand-dark transition-colors">
+                    className="text-edge hover:text-brand-dark transition-colors">
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 )}
               </div>
-              <p className="text-xs font-mono text-slate-400 mt-0.5 truncate">{bot.userAgent}</p>
+              <p className="text-xs font-mono text-ink-3 mt-0.5 truncate">{bot.userAgent}</p>
             </div>
             <button onClick={() => onRemove(bot.id)}
-              className="shrink-0 p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100">
+              className="shrink-0 p-1.5 rounded-lg text-edge hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -126,12 +126,12 @@ export default function WhitelistPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center gap-3">
-        <Link href="/dashboard/bots/manage" className="text-slate-400 hover:text-slate-700 transition-colors">
+        <Link href="/dashboard/bots/manage" className="text-ink-3 hover:text-ink transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Whitelist &amp; Blacklist</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Permanent allow or block overrides per bot</p>
+          <h1 className="text-xl font-bold text-ink">Whitelist &amp; Blacklist</h1>
+          <p className="text-sm text-ink-2 mt-0.5">Permanent allow or block overrides per bot</p>
         </div>
       </div>
 

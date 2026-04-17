@@ -15,7 +15,7 @@ const GROUP_COLORS: Record<string, { bg: string; text: string; border: string }>
   amber:   { bg:'bg-amber-50',   text:'text-amber-700',   border:'border-amber-200'  },
   emerald: { bg:'bg-emerald-50', text:'text-emerald-700', border:'border-emerald-200'},
   red:     { bg:'bg-red-50',     text:'text-red-600',     border:'border-red-200'    },
-  slate:   { bg:'bg-slate-50',   text:'text-slate-600',   border:'border-slate-200'  },
+  slate:   { bg:'bg-canvas',   text:'text-ink-2',   border:'border-edge'  },
 };
 
 const STATUS_BADGE: Record<BotStatus, string> = {
@@ -54,9 +54,9 @@ function GroupCard({ group }: { group: BotGroup }) {
           </div>
           {editing ? (
             <input value={name} onChange={e => setName(e.target.value)} autoFocus
-              className="font-bold text-slate-900 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark/30" />
+              className="font-bold text-ink bg-white border border-edge rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark/30" />
           ) : (
-            <span className="font-bold text-slate-900">{group.name}</span>
+            <span className="font-bold text-ink">{group.name}</span>
           )}
         </div>
         <div className="flex items-center gap-1">
@@ -65,7 +65,7 @@ function GroupCard({ group }: { group: BotGroup }) {
               <button onClick={save} className="p-1.5 rounded-lg bg-brand-dark text-white hover:bg-brand-mid transition-colors">
                 <Check className="w-3.5 h-3.5" />
               </button>
-              <button onClick={() => { setEditing(false); setName(group.name); }} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 transition-colors">
+              <button onClick={() => { setEditing(false); setName(group.name); }} className="p-1.5 rounded-lg text-ink-2 hover:bg-slate-200 transition-colors">
                 <X className="w-3.5 h-3.5" />
               </button>
             </>
@@ -78,37 +78,37 @@ function GroupCard({ group }: { group: BotGroup }) {
       </div>
 
       {/* Stats */}
-      <div className="px-5 py-3 border-b border-slate-100 flex gap-6 text-sm">
+      <div className="px-5 py-3 border-b border-edge-2 flex gap-6 text-sm">
         <div>
-          <p className="text-xs text-slate-400">Members</p>
+          <p className="text-xs text-ink-3">Members</p>
           <p className="font-semibold text-slate-800">{members.length} bots</p>
         </div>
         <div>
-          <p className="text-xs text-slate-400">Requests (7d)</p>
+          <p className="text-xs text-ink-3">Requests (7d)</p>
           <p className="font-semibold text-slate-800">{compactNumber(totalReq)}</p>
         </div>
         <div>
-          <p className="text-xs text-slate-400">Revenue (7d)</p>
+          <p className="text-xs text-ink-3">Revenue (7d)</p>
           <p className="font-semibold text-brand-dark">{totalRev > 0 ? formatUsdcDollar(totalRev) : '—'}</p>
         </div>
       </div>
 
       {/* Policy controls */}
-      <div className="px-5 py-3 border-b border-slate-100 flex flex-wrap gap-3 items-center">
+      <div className="px-5 py-3 border-b border-edge-2 flex flex-wrap gap-3 items-center">
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-slate-500 font-medium">Status:</span>
+          <span className="text-xs text-ink-2 font-medium">Status:</span>
           {(['allowed','blocked','pending'] as BotStatus[]).map(s => (
             <button key={s} onClick={() => { setStatus(s); if (!editing) { updateGroup(group.id, { policy: { ...group.policy, status: s } }); setBulkStatus(group.botIds, s); } }}
-              className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize border transition-colors ${status === s ? STATUS_BADGE[s] + ' border-transparent' : 'border-slate-200 text-slate-400 hover:border-slate-300'}`}>
+              className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize border transition-colors ${status === s ? STATUS_BADGE[s] + ' border-transparent' : 'border-edge text-ink-3 hover:border-slate-300'}`}>
               {s}
             </button>
           ))}
         </div>
         <div className="flex items-center gap-1.5 ml-auto">
-          <span className="text-xs text-slate-500 font-medium">Tier:</span>
+          <span className="text-xs text-ink-2 font-medium">Tier:</span>
           {(['default','free','custom'] as AccessLevel[]).map(a => (
             <button key={a} onClick={() => { setAccess(a); if (!editing) updateGroup(group.id, { policy: { ...group.policy, accessLevel: a } }); }}
-              className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize border transition-colors ${access === a ? 'bg-brand-dark text-white border-brand-dark' : 'border-slate-200 text-slate-400 hover:border-slate-300'}`}>
+              className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize border transition-colors ${access === a ? 'bg-brand-dark text-white border-brand-dark' : 'border-edge text-ink-3 hover:border-slate-300'}`}>
               {a}
             </button>
           ))}
@@ -128,7 +128,7 @@ function GroupCard({ group }: { group: BotGroup }) {
             );
           })}
           {members.length === 0 && (
-            <span className="text-xs text-slate-400 italic">No members</span>
+            <span className="text-xs text-ink-3 italic">No members</span>
           )}
         </div>
       </div>
@@ -145,12 +145,12 @@ export default function BotGroupsPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center gap-3">
         <Link href="/dashboard/bots/manage"
-          className="text-slate-400 hover:text-slate-700 transition-colors">
+          className="text-ink-3 hover:text-ink transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Bot Groups</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Apply bulk settings to categories of bots</p>
+          <h1 className="text-xl font-bold text-ink">Bot Groups</h1>
+          <p className="text-sm text-ink-2 mt-0.5">Apply bulk settings to categories of bots</p>
         </div>
         <button className="ml-auto flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-dark hover:bg-brand-mid px-3 py-2 rounded-xl transition-colors">
           <Plus className="w-4 h-4" /> New Group
@@ -161,8 +161,8 @@ export default function BotGroupsPage() {
         {groups.map(g => <GroupCard key={g.id} group={g} />)}
       </div>
 
-      <div className="bg-slate-50 rounded-xl border border-slate-200 p-5 text-sm text-slate-500">
-        <p className="font-semibold text-slate-700 mb-1 flex items-center gap-1.5"><Users className="w-4 h-4" /> About Groups</p>
+      <div className="bg-canvas rounded-xl border border-edge p-5 text-sm text-ink-2">
+        <p className="font-semibold text-ink mb-1 flex items-center gap-1.5"><Users className="w-4 h-4" /> About Groups</p>
         <p>Groups let you apply access policies to many bots at once. Changes to a group&apos;s status or tier propagate to all member bots immediately. Individual overrides still apply per-bot.</p>
       </div>
     </div>

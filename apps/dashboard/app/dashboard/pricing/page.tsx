@@ -149,22 +149,22 @@ export default function PricingPage() {
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Pricing Rules</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <h1 className="text-xl font-bold text-ink">Pricing Rules</h1>
+          <p className="text-sm text-ink-2 mt-0.5">
             Visually build path- and bot-based pricing without editing JSON
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button onClick={() => setShowTemplates(v => !v)}
-            className="flex items-center gap-1.5 text-sm font-medium border border-slate-200 rounded-xl px-3 py-2 text-slate-600 hover:bg-slate-50 transition-colors">
+            className="flex items-center gap-1.5 text-sm font-medium border border-edge rounded-xl px-3 py-2 text-ink-2 hover:bg-canvas transition-colors">
             <Sparkles className="w-4 h-4" /> Templates
           </button>
           <button onClick={handleExport}
-            className="flex items-center gap-1.5 text-sm font-medium border border-slate-200 rounded-xl px-3 py-2 text-slate-600 hover:bg-slate-50 transition-colors">
+            className="flex items-center gap-1.5 text-sm font-medium border border-edge rounded-xl px-3 py-2 text-ink-2 hover:bg-canvas transition-colors">
             <Download className="w-4 h-4" /> Export
           </button>
           <button onClick={() => fileRef.current?.click()}
-            className="flex items-center gap-1.5 text-sm font-medium border border-slate-200 rounded-xl px-3 py-2 text-slate-600 hover:bg-slate-50 transition-colors">
+            className="flex items-center gap-1.5 text-sm font-medium border border-edge rounded-xl px-3 py-2 text-ink-2 hover:bg-canvas transition-colors">
             <Upload className="w-4 h-4" /> Import
           </button>
           <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
@@ -178,13 +178,13 @@ export default function PricingPage() {
       {/* ── Stats strip ──────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label:'Total Rules',   value: String(rules.length),         color:'text-slate-900' },
+          { label:'Total Rules',   value: String(rules.length),         color:'text-ink' },
           { label:'Active Rules',  value: String(activeRules),          color:'text-brand-dark' },
           { label:'Rev 7d',        value: formatUsdcDollar(totalRev),   color:'text-emerald-600' },
-          { label:'Requests 7d',   value: totalReq.toLocaleString(),    color:'text-slate-700'  },
+          { label:'Requests 7d',   value: totalReq.toLocaleString(),    color:'text-ink'  },
         ].map(s => (
-          <div key={s.label} className="bg-white rounded-xl border border-slate-200 px-4 py-3 hover:shadow-sm transition-shadow">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{s.label}</p>
+          <div key={s.label} className="card px-4 py-3 hover:shadow-sm transition-shadow">
+            <p className="text-xs font-semibold uppercase tracking-wide text-ink-2">{s.label}</p>
             <p className={`text-2xl font-bold tabular-nums mt-1 ${s.color}`}>{s.value}</p>
           </div>
         ))}
@@ -217,12 +217,12 @@ export default function PricingPage() {
 
       {/* ── Templates panel ───────────────────────────────────────────────── */}
       {showTemplates && (
-        <div className="bg-white rounded-xl border border-slate-200 p-5 animate-fade-in">
+        <div className="card p-5 animate-fade-in">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+            <h2 className="text-sm font-semibold text-ink flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-amber-400" /> Quick-start Templates
             </h2>
-            <button onClick={() => setShowTemplates(false)} className="text-slate-400 hover:text-slate-600">
+            <button onClick={() => setShowTemplates(false)} className="text-ink-3 hover:text-ink-2">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -254,36 +254,36 @@ export default function PricingPage() {
         <div className="lg:col-span-2 space-y-5">
 
           {/* Default pricing card */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5">
+          <div className="card p-5">
             <div className="flex items-center gap-2 mb-4">
-              <Sliders className="w-4 h-4 text-slate-400" />
-              <h2 className="text-sm font-semibold text-slate-700">Default Pricing (catch-all)</h2>
-              <span className="text-xs text-slate-400 ml-auto">Applied when no rule matches</span>
+              <Sliders className="w-4 h-4 text-ink-3" />
+              <h2 className="text-sm font-semibold text-ink">Default Pricing (catch-all)</h2>
+              <span className="text-xs text-ink-3 ml-auto">Applied when no rule matches</span>
             </div>
             <div className="flex flex-wrap gap-4 items-end">
               <div>
-                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Price / Page (µUSDC)</label>
+                <label className="text-xs font-semibold text-ink-2 uppercase tracking-wide">Price / Page (µUSDC)</label>
                 <input type="number" min="0" value={defaultDraft.pricePerPage}
                   onChange={e => setDefaultDraft(d => ({ ...d, pricePerPage: Math.max(0, parseInt(e.target.value)||0) }))}
-                  className="mt-1.5 w-36 px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark" />
-                <p className="text-xs text-slate-400 mt-1">{formatUsdcDollar(defaultDraft.pricePerPage)} per request</p>
+                  className="mt-1.5 w-36 px-3 py-2.5 rounded-xl border border-edge text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark" />
+                <p className="text-xs text-ink-3 mt-1">{formatUsdcDollar(defaultDraft.pricePerPage)} per request</p>
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">License Type</label>
+                <label className="text-xs font-semibold text-ink-2 uppercase tracking-wide">License Type</label>
                 <div className="mt-1.5 relative">
                   <select value={defaultDraft.licenseType}
                     onChange={e => setDefaultDraft(d => ({ ...d, licenseType: e.target.value as LicenseType }))}
-                    className="appearance-none w-44 pl-3 pr-8 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark text-slate-800">
+                    className="appearance-none w-44 pl-3 pr-8 py-2.5 rounded-xl border border-edge text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark text-slate-800">
                     {LICENSE_OPTIONS.map(o => <option key={o.val} value={o.val}>{o.label}</option>)}
                   </select>
-                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-3 pointer-events-none" />
                 </div>
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Free Tier Limit / day</label>
+                <label className="text-xs font-semibold text-ink-2 uppercase tracking-wide">Free Tier Limit / day</label>
                 <input type="number" min="0" value={defaultDraft.freeTierLimit}
                   onChange={e => setDefaultDraft(d => ({ ...d, freeTierLimit: Math.max(0, parseInt(e.target.value)||0) }))}
-                  className="mt-1.5 w-28 px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark" />
+                  className="mt-1.5 w-28 px-3 py-2.5 rounded-xl border border-edge text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark" />
               </div>
               <button onClick={saveDefault}
                 className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${defaultSaved ? 'bg-emerald-600 text-white' : 'bg-brand-dark text-white hover:bg-brand-mid'}`}>
@@ -302,10 +302,10 @@ export default function PricingPage() {
                   Actions <ChevronDown className="w-3.5 h-3.5" />
                 </button>
                 {bulkMenu && (
-                  <div className="absolute right-0 top-9 bg-white rounded-xl shadow-xl border border-slate-100 py-1 w-48 z-10 text-slate-700">
-                    <button className="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 flex items-center gap-2">Enable Selected</button>
-                    <button className="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 flex items-center gap-2">Disable Selected</button>
-                    <button className="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 text-red-500">Delete Selected</button>
+                  <div className="absolute right-0 top-9 bg-white rounded-xl shadow-xl border border-edge-2 py-1 w-48 z-10 text-ink">
+                    <button className="w-full text-left px-4 py-2.5 text-sm hover:bg-canvas flex items-center gap-2">Enable Selected</button>
+                    <button className="w-full text-left px-4 py-2.5 text-sm hover:bg-canvas flex items-center gap-2">Disable Selected</button>
+                    <button className="w-full text-left px-4 py-2.5 text-sm hover:bg-canvas text-red-500">Delete Selected</button>
                   </div>
                 )}
                 <button onClick={() => setSelected(new Set())}
@@ -319,17 +319,17 @@ export default function PricingPage() {
           {/* Rules list */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-slate-700">
-                Rules <span className="text-slate-400 font-normal">({sortedRules.length})</span>
+              <h2 className="text-sm font-semibold text-ink">
+                Rules <span className="text-ink-3 font-normal">({sortedRules.length})</span>
               </h2>
-              <p className="text-xs text-slate-400">Evaluated top-to-bottom — first match wins</p>
+              <p className="text-xs text-ink-3">Evaluated top-to-bottom — first match wins</p>
             </div>
 
             {sortedRules.length === 0 ? (
               <div className="bg-white rounded-xl border border-dashed border-slate-300 py-16 text-center">
-                <Sliders className="w-8 h-8 text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-500 font-medium">No rules yet</p>
-                <p className="text-sm text-slate-400 mt-1">Add a rule or apply a template to get started</p>
+                <Sliders className="w-8 h-8 text-edge mx-auto mb-3" />
+                <p className="text-ink-2 font-medium">No rules yet</p>
+                <p className="text-sm text-ink-3 mt-1">Add a rule or apply a template to get started</p>
                 <button onClick={() => { setEditingRule(null); setBuilderOpen(true); }}
                   className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 bg-brand-dark text-white rounded-xl text-sm font-semibold hover:bg-brand-mid transition-colors">
                   <Plus className="w-4 h-4" /> Add First Rule
@@ -350,8 +350,8 @@ export default function PricingPage() {
             )}
 
             {sortedRules.length > 0 && (
-              <div className="bg-slate-50 rounded-xl border border-dashed border-slate-200 px-4 py-3 text-center">
-                <p className="text-xs text-slate-400">
+              <div className="bg-canvas rounded-xl border border-dashed border-edge px-4 py-3 text-center">
+                <p className="text-xs text-ink-3">
                   ↓ Default pricing ({formatUsdcDollar(defaultPricing.pricePerPage)}) applied if no rule matches
                 </p>
               </div>
@@ -361,20 +361,20 @@ export default function PricingPage() {
 
         {/* ── Right: Simulator ─────────────────────────────────────────── */}
         <div className="space-y-4">
-          <div className="bg-white rounded-xl border border-slate-200 p-5 lg:sticky lg:top-6">
-            <h2 className="text-sm font-semibold text-slate-700 mb-4">Request Simulator</h2>
+          <div className="card p-5 lg:sticky lg:top-6">
+            <h2 className="text-sm font-semibold text-ink mb-4">Request Simulator</h2>
             <PricingSimulator prefillRule={testRule} />
             {testRule && (
               <button onClick={() => setTestRule(null)}
-                className="mt-3 text-xs text-slate-400 hover:text-slate-600 transition-colors w-full text-center">
+                className="mt-3 text-xs text-ink-3 hover:text-ink-2 transition-colors w-full text-center">
                 Clear prefill
               </button>
             )}
           </div>
 
           {/* Rule legend */}
-          <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-2.5">
-            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Price Color Guide</p>
+          <div className="card p-4 space-y-2.5">
+            <p className="text-xs font-semibold text-ink-2 uppercase tracking-wide">Price Color Guide</p>
             {[
               { label:'Free (0 µUSDC)', color:'bg-emerald-50 border-emerald-200 text-emerald-600' },
               { label:'Low (&lt; 1000 µUSDC)', color:'bg-sky-50 border-sky-200 text-sky-600' },

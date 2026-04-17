@@ -7,7 +7,11 @@
       "Bash(npx tsc:*)",
       "Bash(timeout 6 node --loader tsx/esm examples/express-demo/src/server.ts)",
       "Bash(git add:*)",
-      "Bash(git commit -m ':*)"
+      "Bash(git commit -m ':*)",
+      "Bash(npx turbo:*)",
+      "Bash(npm run:*)",
+      "Bash(npm cache:*)",
+      "Bash(node -e \"const w = require\\('@solana/wallet-adapter-wallets'\\); console.log\\(Object.keys\\(w\\).filter\\(k => k.includes\\('Adapter'\\)\\)\\)\")"
     ]
   }
 }

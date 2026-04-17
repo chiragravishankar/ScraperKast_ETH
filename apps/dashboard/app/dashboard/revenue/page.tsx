@@ -20,8 +20,8 @@ export default async function RevenuePage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-xl font-bold text-slate-900">Revenue</h1>
-        <p className="text-sm text-slate-500 mt-0.5">USDC earnings from AI bot access fees</p>
+        <h1 className="text-xl font-bold text-ink">Revenue</h1>
+        <p className="text-sm text-ink-2 mt-0.5">USDC earnings from AI bot access fees</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -31,31 +31,31 @@ export default async function RevenuePage() {
         <StatCard title="Avg / Day"        value={formatUsdcDollar(totals.avgPerDay)} />
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 p-5">
-        <h2 className="text-sm font-semibold text-slate-700 mb-4">Daily Revenue (Last 30 days)</h2>
+      <div className="card p-5">
+        <h2 className="text-sm font-semibold text-ink mb-4">Daily Revenue (Last 30 days)</h2>
         <RevenueChart data={daily} />
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 p-5">
-        <h2 className="text-sm font-semibold text-slate-700 mb-4">Revenue by Bot</h2>
+      <div className="card p-5">
+        <h2 className="text-sm font-semibold text-ink mb-4">Revenue by Bot</h2>
         <RevenueBotChart data={byBot} />
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 p-5">
-        <h2 className="text-sm font-semibold text-slate-700 mb-3">Revenue Split</h2>
+      <div className="card p-5">
+        <h2 className="text-sm font-semibold text-ink mb-3">Revenue Split</h2>
         <div className="flex items-center gap-4">
-          <div className="flex-1 bg-slate-50 rounded-lg p-4 text-center">
-            <p className="text-xs text-slate-500 mb-1">Website Owner (95%)</p>
+          <div className="flex-1 bg-canvas rounded-lg p-4 text-center">
+            <p className="text-xs text-ink-2 mb-1">Website Owner (95%)</p>
             <p className="text-lg font-bold text-brand-dark">{formatUsdcDollar(totals.ownerShare)}</p>
           </div>
           <div className="text-slate-300 text-xl font-light">+</div>
-          <div className="flex-1 bg-slate-50 rounded-lg p-4 text-center">
-            <p className="text-xs text-slate-500 mb-1">ScraperKast Platform (5%)</p>
-            <p className="text-lg font-bold text-slate-600">{formatUsdcDollar(totals.platformFees)}</p>
+          <div className="flex-1 bg-canvas rounded-lg p-4 text-center">
+            <p className="text-xs text-ink-2 mb-1">ScraperKast Platform (5%)</p>
+            <p className="text-lg font-bold text-ink-2">{formatUsdcDollar(totals.platformFees)}</p>
           </div>
           <div className="text-slate-300 text-xl font-light">=</div>
           <div className="flex-1 bg-emerald-50 rounded-lg p-4 text-center">
-            <p className="text-xs text-slate-500 mb-1">Total Collected</p>
+            <p className="text-xs text-ink-2 mb-1">Total Collected</p>
             <p className="text-lg font-bold text-emerald-700">{formatUsdcDollar(totals.total)}</p>
           </div>
         </div>

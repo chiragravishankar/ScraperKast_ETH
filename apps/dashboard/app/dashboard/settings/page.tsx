@@ -19,7 +19,7 @@ function SectionHeader({ title, hint }: { title: string; hint?: string }) {
     <div className="flex items-start gap-2 mb-4">
       <div>
         <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
-        {hint && <p className="text-xs text-slate-400 mt-0.5">{hint}</p>}
+        {hint && <p className="text-xs text-ink-3 mt-0.5">{hint}</p>}
       </div>
     </div>
   );
@@ -28,9 +28,9 @@ function SectionHeader({ title, hint }: { title: string; hint?: string }) {
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide">{label}</label>
+      <label className="block text-xs font-semibold text-ink-2 uppercase tracking-wide">{label}</label>
       {children}
-      {hint && <p className="text-xs text-slate-400">{hint}</p>}
+      {hint && <p className="text-xs text-ink-3">{hint}</p>}
     </div>
   );
 }
@@ -48,7 +48,7 @@ function Input({ value, onChange, placeholder = '', mono = false, readOnly = fal
       onChange={e => onChange?.(e.target.value)}
       className={`w-full px-3 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark transition-colors
         ${mono ? 'font-mono' : ''}
-        ${readOnly ? 'bg-slate-50 text-slate-400 cursor-default border-slate-200' : 'bg-white text-slate-900 border-slate-200'}`}
+        ${readOnly ? 'bg-canvas text-ink-3 cursor-default border-edge' : 'bg-white text-ink border-edge'}`}
     />
   );
 }
@@ -62,7 +62,7 @@ function Textarea({ value, onChange, placeholder = '', rows = 3 }: {
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
       rows={rows}
-      className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark resize-none"
+      className="w-full px-3 py-2.5 rounded-xl border border-edge text-sm bg-white text-ink focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark resize-none"
     />
   );
 }
@@ -74,10 +74,10 @@ function Select({ value, onChange, options }: {
   return (
     <div className="relative">
       <select value={value} onChange={e => onChange(e.target.value)}
-        className="w-full appearance-none pl-3 pr-8 py-2.5 rounded-xl border border-slate-200 text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark">
+        className="w-full appearance-none pl-3 pr-8 py-2.5 rounded-xl border border-edge text-sm bg-white text-ink focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark">
         {options.map(o => <option key={o.val} value={o.val}>{o.label}</option>)}
       </select>
-      <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+      <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-3 pointer-events-none" />
     </div>
   );
 }
@@ -88,8 +88,8 @@ function Toggle({ checked, onChange, label, hint }: {
   return (
     <label className="flex items-start justify-between gap-4 py-3 cursor-pointer group">
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-slate-800 group-hover:text-slate-900">{label}</p>
-        {hint && <p className="text-xs text-slate-400 mt-0.5">{hint}</p>}
+        <p className="text-sm font-medium text-slate-800 group-hover:text-ink">{label}</p>
+        {hint && <p className="text-xs text-ink-3 mt-0.5">{hint}</p>}
       </div>
       <button type="button" onClick={() => onChange(!checked)}
         className={`relative w-10 h-5.5 rounded-full transition-colors shrink-0 mt-0.5 ${checked ? 'bg-brand-dark' : 'bg-slate-200'}`}
@@ -100,10 +100,10 @@ function Toggle({ checked, onChange, label, hint }: {
   );
 }
 
-function Divider() { return <div className="border-t border-slate-100 my-5" />; }
+function Divider() { return <div className="border-t border-edge-2 my-5" />; }
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <div className={`bg-white rounded-xl border border-slate-200 p-5 space-y-5 ${className}`}>{children}</div>;
+  return <div className={`card p-5 space-y-5 ${className}`}>{children}</div>;
 }
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
@@ -214,17 +214,17 @@ function PaymentTab() {
       <Card>
         <SectionHeader title="Payment Configuration" />
         {/* Platform fee (read-only) */}
-        <div className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3">
+        <div className="flex items-center justify-between bg-canvas rounded-xl px-4 py-3">
           <div>
-            <p className="text-sm font-semibold text-slate-700">ScraperKast Platform Fee</p>
-            <p className="text-xs text-slate-400 mt-0.5">Enforced on-chain — no trust required</p>
+            <p className="text-sm font-semibold text-ink">ScraperKast Platform Fee</p>
+            <p className="text-xs text-ink-3 mt-0.5">Enforced on-chain — no trust required</p>
           </div>
           <span className="text-2xl font-bold text-brand-dark">5%</span>
         </div>
         <div className="w-full bg-slate-100 rounded-full h-2">
           <div className="bg-brand-dark h-2 rounded-full" style={{ width: '95%' }} />
         </div>
-        <div className="flex justify-between text-xs text-slate-500 -mt-3">
+        <div className="flex justify-between text-xs text-ink-2 -mt-3">
           <span>You keep <strong className="text-brand-dark">95%</strong></span>
           <span>Platform <strong>5%</strong></span>
         </div>
@@ -343,7 +343,7 @@ function AutomationTab() {
               <Field label="Send at (UTC)">
                 <input type="time" value={a.dailySummaryTime}
                   onChange={e => set({ dailySummaryTime: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark" />
+                  className="w-full px-3 py-2.5 rounded-xl border border-edge text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark" />
               </Field>
             </div>
           )}
@@ -430,10 +430,10 @@ export const config = { matcher: ['/((?!api|_next).*)'] };`,
           { label:'Production Key', key: api.productionKey, show: showProd, setShow: setShowProd, type: 'production' as const },
           { label:'Test Key',       key: api.testKey,       show: showTest, setShow: setShowTest, type: 'test'       as const },
         ].map(({ label, key, show, setShow, type }) => (
-          <div key={type} className="bg-slate-50 rounded-xl p-4 space-y-2">
+          <div key={type} className="bg-canvas rounded-xl p-4 space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">{label}</p>
-              <div className="flex items-center gap-1.5 text-xs text-slate-400">
+              <p className="text-xs font-semibold text-ink-2 uppercase tracking-wide">{label}</p>
+              <div className="flex items-center gap-1.5 text-xs text-ink-3">
                 <Clock className="w-3 h-3" />
                 {type === 'production'
                   ? `Created ${Math.round((Date.now() - api.prodKeyCreated) / 86_400_000)}d ago`
@@ -441,15 +441,15 @@ export const config = { matcher: ['/((?!api|_next).*)'] };`,
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <code className="flex-1 font-mono text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-700 truncate">
+              <code className="flex-1 font-mono text-xs bg-white border border-edge rounded-lg px-3 py-2 text-ink truncate">
                 {show ? key : mask(key)}
               </code>
-              <button onClick={() => setShow(v => !v)} className="p-2 rounded-lg border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors bg-white">
+              <button onClick={() => setShow(v => !v)} className="p-2 rounded-lg border border-edge text-ink-3 hover:text-ink hover:bg-slate-100 transition-colors bg-white">
                 {show ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               </button>
               <CopyButton text={key} />
               <button onClick={() => setConfirmRegen(type)}
-                className="p-2 rounded-lg border border-slate-200 text-slate-400 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-200 transition-colors bg-white">
+                className="p-2 rounded-lg border border-edge text-ink-3 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-200 transition-colors bg-white">
                 <RefreshCw className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -488,11 +488,11 @@ export const config = { matcher: ['/((?!api|_next).*)'] };`,
         </Field>
         <Field label="Webhook Secret">
           <div className="flex items-center gap-2">
-            <code className="flex-1 font-mono text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-700 truncate">
+            <code className="flex-1 font-mono text-xs bg-canvas border border-edge rounded-xl px-3 py-2.5 text-ink truncate">
               {showSecret ? api.webhookSecret : 'whsec_••••••••••••••••'}
             </code>
             <button onClick={() => setShowSecret(v => !v)}
-              className="p-2.5 rounded-xl border border-slate-200 text-slate-400 hover:text-slate-700 bg-white transition-colors">
+              className="p-2.5 rounded-xl border border-edge text-ink-3 hover:text-ink bg-white transition-colors">
               {showSecret ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
             </button>
             <CopyButton text={api.webhookSecret} />
@@ -501,7 +501,7 @@ export const config = { matcher: ['/((?!api|_next).*)'] };`,
 
         {/* Events */}
         <div>
-          <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Events</p>
+          <p className="text-xs font-semibold text-ink-2 uppercase tracking-wide mb-2">Events</p>
           <div className="grid grid-cols-2 gap-2">
             {([
               ['paymentReceived',     'Payment received'    ],
@@ -509,7 +509,7 @@ export const config = { matcher: ['/((?!api|_next).*)'] };`,
               ['balanceLow',         'Balance low'          ],
               ['withdrawalCompleted','Withdrawal completed' ],
             ] as const).map(([key, label]) => (
-              <label key={key} className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all text-sm ${api.webhookEvents[key] ? 'border-brand-dark bg-brand-dark/5 font-medium text-brand-dark' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}>
+              <label key={key} className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all text-sm ${api.webhookEvents[key] ? 'border-brand-dark bg-brand-dark/5 font-medium text-brand-dark' : 'border-edge text-ink-2 hover:border-slate-300'}`}>
                 <input type="checkbox" className="accent-brand-dark shrink-0"
                   checked={api.webhookEvents[key]}
                   onChange={e => set({ webhookEvents: { ...api.webhookEvents, [key]: e.target.checked } })} />
@@ -564,16 +564,16 @@ export const config = { matcher: ['/((?!api|_next).*)'] };`,
             { name:'Zapier',  desc:'Connect to 5000+ apps via Zapier',     available: false },
             { name:'Stripe',  desc:'Multi-currency card payments',         available: false },
           ].map(int => (
-            <div key={int.name} className={`flex items-center justify-between p-4 rounded-xl border ${int.available ? 'border-slate-200 hover:border-brand-dark/30' : 'border-slate-100 bg-slate-50'} transition-colors`}>
+            <div key={int.name} className={`flex items-center justify-between p-4 rounded-xl border ${int.available ? 'border-edge hover:border-brand-dark/30' : 'border-edge-2 bg-canvas'} transition-colors`}>
               <div>
                 <p className="text-sm font-semibold text-slate-800">{int.name}</p>
-                <p className="text-xs text-slate-400 mt-0.5">{int.desc}</p>
+                <p className="text-xs text-ink-3 mt-0.5">{int.desc}</p>
               </div>
               {int.available
-                ? <button className="text-xs font-semibold px-3 py-1.5 border border-slate-200 rounded-lg text-slate-600 hover:border-brand-dark hover:text-brand-dark transition-colors flex items-center gap-1">
+                ? <button className="text-xs font-semibold px-3 py-1.5 border border-edge rounded-lg text-ink-2 hover:border-brand-dark hover:text-brand-dark transition-colors flex items-center gap-1">
                     Connect <ExternalLink className="w-3 h-3" />
                   </button>
-                : <span className="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded-full">Coming soon</span>
+                : <span className="text-xs text-ink-3 bg-slate-100 px-2 py-1 rounded-full">Coming soon</span>
               }
             </div>
           ))}
@@ -634,16 +634,16 @@ function SecurityTab() {
           <div className="space-y-2">
             <div className="space-y-1">
               {s.allowedIPs.map((ip, idx) => (
-                <div key={idx} className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2">
-                  <code className="flex-1 font-mono text-xs text-slate-700">{ip}</code>
+                <div key={idx} className="flex items-center gap-2 bg-canvas rounded-xl px-3 py-2">
+                  <code className="flex-1 font-mono text-xs text-ink">{ip}</code>
                   <button onClick={() => set({ allowedIPs: s.allowedIPs.filter((_, i) => i !== idx) })}
-                    className="text-slate-300 hover:text-red-500 transition-colors">
+                    className="text-edge hover:text-red-500 transition-colors">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               ))}
               {s.allowedIPs.length === 0 && (
-                <p className="text-xs text-slate-400 italic px-3">No IPs added — add at least one to enable the whitelist</p>
+                <p className="text-xs text-ink-3 italic px-3">No IPs added — add at least one to enable the whitelist</p>
               )}
             </div>
             <div className="flex gap-2">
@@ -684,8 +684,8 @@ function SecurityTab() {
           {AUDIT_EVENTS.map((e, i) => (
             <div key={i} className="flex items-center gap-3 py-3 text-sm">
               <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${e.type === 'warning' ? 'bg-amber-400' : 'bg-slate-300'}`} />
-              <span className="flex-1 text-slate-700">{e.event}</span>
-              <span className="text-xs text-slate-400 shrink-0">{e.time}</span>
+              <span className="flex-1 text-ink">{e.event}</span>
+              <span className="text-xs text-ink-3 shrink-0">{e.time}</span>
             </div>
           ))}
         </div>
@@ -717,7 +717,7 @@ function NotificationsTab() {
         {/* External channels */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
           {['Slack','Discord','Telegram'].map(ch => (
-            <button key={ch} className="flex items-center justify-center gap-2 py-2.5 border border-dashed border-slate-300 rounded-xl text-sm text-slate-500 hover:border-brand-dark hover:text-brand-dark transition-colors">
+            <button key={ch} className="flex items-center justify-center gap-2 py-2.5 border border-dashed border-slate-300 rounded-xl text-sm text-ink-2 hover:border-brand-dark hover:text-brand-dark transition-colors">
               <Plus className="w-3.5 h-3.5" /> Connect {ch}
             </button>
           ))}
@@ -754,11 +754,11 @@ function NotificationsTab() {
             <div className="grid grid-cols-2 gap-4">
               <Field label="Quiet from">
                 <input type="time" value={n.quietFrom} onChange={e => set({ quietFrom: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark" />
+                  className="w-full px-3 py-2.5 rounded-xl border border-edge text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark" />
               </Field>
               <Field label="Quiet until">
                 <input type="time" value={n.quietTo} onChange={e => set({ quietTo: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark" />
+                  className="w-full px-3 py-2.5 rounded-xl border border-edge text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark" />
               </Field>
             </div>
             <Toggle checked={n.quietAllowCritical} onChange={v => set({ quietAllowCritical: v })}
@@ -867,11 +867,11 @@ function AdvancedTab() {
         <SectionHeader title="Data Management" />
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <button onClick={handleExport}
-            className="flex items-center justify-center gap-2 py-3 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+            className="flex items-center justify-center gap-2 py-3 border border-edge rounded-xl text-sm font-semibold text-ink hover:bg-canvas transition-colors">
             {exportDone ? <><Check className="w-4 h-4 text-emerald-500" /> Exported!</> : <><Download className="w-4 h-4" /> Export All Data</>}
           </button>
           <button onClick={() => fileRef.current?.click()}
-            className="flex items-center justify-center gap-2 py-3 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+            className="flex items-center justify-center gap-2 py-3 border border-edge rounded-xl text-sm font-semibold text-ink hover:bg-canvas transition-colors">
             <Upload className="w-4 h-4" /> Import Config
           </button>
           <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
@@ -952,28 +952,28 @@ function SettingsPageInner() {
       {/* ── Header ───────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Settings</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Platform configuration and automation</p>
+          <h1 className="text-xl font-bold text-ink">Settings</h1>
+          <p className="text-sm text-ink-2 mt-0.5">Platform configuration and automation</p>
         </div>
         <div className="flex items-center gap-3">
           {/* Last saved */}
           {lastSaved && (
-            <span className="text-xs text-slate-400 flex items-center gap-1">
+            <span className="text-xs text-ink-3 flex items-center gap-1">
               <Clock className="w-3 h-3" /> Saved {Math.round((Date.now() - lastSaved) / 1000)}s ago
             </span>
           )}
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-3" />
             <input type="text" placeholder="Search settings…" value={search} onChange={e => setSearch(e.target.value)}
-              className="pl-8 pr-3 py-2 rounded-xl border border-slate-200 text-sm bg-white w-40 focus:w-56 focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark transition-all" />
+              className="pl-8 pr-3 py-2 rounded-xl border border-edge text-sm bg-white w-40 focus:w-56 focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark transition-all" />
           </div>
           {/* Save button */}
           <button onClick={handleSave}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
               saved ? 'bg-emerald-600 text-white' :
               dirty ? 'bg-brand-dark text-white hover:bg-brand-mid shadow-sm' :
-              'bg-slate-100 text-slate-400 cursor-default'
+              'bg-slate-100 text-ink-3 cursor-default'
             }`}>
             {saved ? <><Check className="w-4 h-4" /> Saved!</> : <><Save className="w-4 h-4" />{dirty ? 'Save Changes' : 'No Changes'}</>}
           </button>
@@ -1002,7 +1002,7 @@ function SettingsPageInner() {
                   className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap shrink-0 ${
                     activeTab === tab.id
                       ? 'bg-brand-dark text-white shadow-sm'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      : 'text-ink-2 hover:bg-slate-100 hover:text-ink'
                   }`}>
                   <Icon className="w-4 h-4 shrink-0" />
                   <span className="hidden lg:block">{tab.label}</span>

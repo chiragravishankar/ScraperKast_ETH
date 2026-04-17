@@ -19,7 +19,7 @@ const TYPE_COLORS: Record<string, string> = {
   ai_training:  'bg-violet-100 text-violet-700',
   ai_inference: 'bg-sky-100 text-sky-700',
   search:       'bg-amber-100 text-amber-700',
-  crawler:      'bg-slate-100 text-slate-600',
+  crawler:      'bg-slate-100 text-ink-2',
 };
 const TYPE_LABELS: Record<string, string> = {
   ai_training: 'AI Training', ai_inference: 'AI Inference', search: 'Search', crawler: 'Crawler',
@@ -30,7 +30,7 @@ const STATUS_BADGE: Record<BotStatus, string> = {
   pending: 'bg-amber-100 text-amber-700',
 };
 const ACCESS_BADGE: Record<string, string> = {
-  default: 'text-slate-500',
+  default: 'text-ink-2',
   free:    'text-emerald-600',
   custom:  'text-brand-dark font-semibold',
 };
@@ -158,7 +158,7 @@ export default function BotManagePage() {
 
   // Sort header helper
   function SortIcon({ k }: { k: SortKey }) {
-    if (sortKey !== k) return <ChevronDown className="w-3 h-3 text-slate-300" />;
+    if (sortKey !== k) return <ChevronDown className="w-3 h-3 text-edge" />;
     return sortAsc ? <ChevronUp className="w-3 h-3 text-brand-dark" /> : <ChevronDown className="w-3 h-3 text-brand-dark" />;
   }
   function handleSort(k: SortKey) {
@@ -232,22 +232,22 @@ export default function BotManagePage() {
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Bot Management</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <h1 className="text-xl font-bold text-ink">Bot Management</h1>
+          <p className="text-sm text-ink-2 mt-0.5">
             Configure access, pricing, and rate limits per bot
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Link href="/dashboard/bots/groups"
-            className="flex items-center gap-1.5 text-sm font-medium border border-slate-200 rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-50 transition-colors">
+            className="flex items-center gap-1.5 text-sm font-medium border border-edge rounded-lg px-3 py-2 text-ink-2 hover:bg-canvas transition-colors">
             <Users className="w-4 h-4" /> Groups
           </Link>
           <Link href="/dashboard/bots/whitelist"
-            className="flex items-center gap-1.5 text-sm font-medium border border-slate-200 rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-50 transition-colors">
+            className="flex items-center gap-1.5 text-sm font-medium border border-edge rounded-lg px-3 py-2 text-ink-2 hover:bg-canvas transition-colors">
             <Shield className="w-4 h-4" /> Lists
           </Link>
           <button onClick={handleExport}
-            className="flex items-center gap-1.5 text-sm font-medium border border-slate-200 rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-50 transition-colors">
+            className="flex items-center gap-1.5 text-sm font-medium border border-edge rounded-lg px-3 py-2 text-ink-2 hover:bg-canvas transition-colors">
             <Download className="w-4 h-4" /> Export
           </button>
         </div>
@@ -256,13 +256,13 @@ export default function BotManagePage() {
       {/* ── Stats ────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label:'Total Bots',    value: totalBots,   color:'text-slate-900' },
+          { label:'Total Bots',    value: totalBots,   color:'text-ink' },
           { label:'Active (24h)',  value: activeBots,  color:'text-brand-dark' },
           { label:'Allowed',       value: allowedBots, color:'text-emerald-600' },
           { label:'Blocked',       value: blockedBots, color:'text-red-500'  },
         ].map(s => (
-          <div key={s.label} className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition-shadow">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{s.label}</p>
+          <div key={s.label} className="card p-4 hover:shadow-md transition-shadow">
+            <p className="text-xs font-semibold uppercase tracking-wide text-ink-2">{s.label}</p>
             <p className={`text-3xl font-bold tabular-nums mt-2 ${s.color}`}>{s.value}</p>
           </div>
         ))}
@@ -272,13 +272,13 @@ export default function BotManagePage() {
       <Recommendations bots={ALL_BOTS} />
 
       {/* ── Global Policy ────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5">
-        <h2 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-          <Filter className="w-4 h-4 text-slate-400" /> Global Bot Policy
+      <div className="card p-5">
+        <h2 className="text-sm font-semibold text-ink mb-4 flex items-center gap-2">
+          <Filter className="w-4 h-4 text-ink-3" /> Global Bot Policy
         </h2>
         <div className="flex flex-wrap gap-3 items-end">
           <div className="space-y-2">
-            <p className="text-xs text-slate-500">Default action for newly detected bots:</p>
+            <p className="text-xs text-ink-2">Default action for newly detected bots:</p>
             <div className="flex gap-3">
               {[
                 { val:'allow',   label:'Auto-allow',      colors: 'border-emerald-500 bg-emerald-50 text-emerald-700' },
@@ -286,7 +286,7 @@ export default function BotManagePage() {
                 { val:'block',   label:'Auto-block',       colors: 'border-red-500 bg-red-50 text-red-600' },
               ].map(opt => (
                 <label key={opt.val}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 cursor-pointer text-sm font-medium transition-all ${policyDraft === opt.val ? opt.colors : 'border-slate-200 text-slate-500 hover:border-slate-300'}`}>
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 cursor-pointer text-sm font-medium transition-all ${policyDraft === opt.val ? opt.colors : 'border-edge text-ink-2 hover:border-slate-300'}`}>
                   <input type="radio" className="sr-only" checked={policyDraft === opt.val} onChange={() => setPolicyDraft(opt.val as typeof policyDraft)} />
                   {opt.label}
                 </label>
@@ -304,31 +304,31 @@ export default function BotManagePage() {
       <div className="flex flex-col sm:flex-row gap-3">
         {/* Search */}
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-3" />
           <input
             type="text"
             placeholder="Search bots by name or company…"
             value={query}
             onChange={e => { setQuery(e.target.value); setPage(1); }}
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark"
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-edge bg-white text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark"
           />
         </div>
 
         {/* Status filter */}
-        <div className="flex rounded-xl border border-slate-200 bg-white overflow-hidden text-sm">
+        <div className="flex rounded-xl border border-edge bg-white overflow-hidden text-sm">
           {(['all','allowed','blocked','pending'] as const).map(s => (
             <button key={s} onClick={() => { setStatusFilter(s); setPage(1); }}
-              className={`px-3 py-2.5 font-medium capitalize transition-colors ${statusFilter === s ? 'bg-brand-dark text-white' : 'text-slate-500 hover:bg-slate-50'}`}>
+              className={`px-3 py-2.5 font-medium capitalize transition-colors ${statusFilter === s ? 'bg-brand-dark text-white' : 'text-ink-2 hover:bg-canvas'}`}>
               {s === 'all' ? 'All' : s}
             </button>
           ))}
         </div>
 
         {/* Tier filter */}
-        <div className="flex rounded-xl border border-slate-200 bg-white overflow-hidden text-sm">
+        <div className="flex rounded-xl border border-edge bg-white overflow-hidden text-sm">
           {(['all','free','paid','custom'] as const).map(t => (
             <button key={t} onClick={() => { setTierFilter(t); setPage(1); }}
-              className={`px-3 py-2.5 font-medium capitalize transition-colors ${tierFilter === t ? 'bg-brand-dark text-white' : 'text-slate-500 hover:bg-slate-50'}`}>
+              className={`px-3 py-2.5 font-medium capitalize transition-colors ${tierFilter === t ? 'bg-brand-dark text-white' : 'text-ink-2 hover:bg-canvas'}`}>
               {t === 'all' ? 'All Tiers' : t}
             </button>
           ))}
@@ -354,10 +354,10 @@ export default function BotManagePage() {
                 More <MoreHorizontal className="w-3.5 h-3.5" />
               </button>
               {bulkMenu && (
-                <div className="absolute right-0 top-9 bg-white rounded-xl shadow-xl border border-slate-100 py-1 w-44 z-10 text-slate-700">
-                  <button className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50">Apply Free Tier</button>
-                  <button className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50">Apply Custom Pricing</button>
-                  <button className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50">Export Selected</button>
+                <div className="absolute right-0 top-9 bg-white rounded-xl shadow-xl border border-edge-2 py-1 w-44 z-10 text-ink">
+                  <button className="w-full text-left px-4 py-2 text-sm hover:bg-canvas">Apply Free Tier</button>
+                  <button className="w-full text-left px-4 py-2 text-sm hover:bg-canvas">Apply Custom Pricing</button>
+                  <button className="w-full text-left px-4 py-2 text-sm hover:bg-canvas">Export Selected</button>
                 </div>
               )}
             </div>
@@ -370,49 +370,49 @@ export default function BotManagePage() {
       )}
 
       {/* ── Table ────────────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50 text-left">
+              <tr className="border-b border-edge-2 bg-canvas text-left">
                 <th className="px-4 py-3 w-10">
-                  <button onClick={toggleSelectAll} className="text-slate-400 hover:text-brand-dark">
+                  <button onClick={toggleSelectAll} className="text-ink-3 hover:text-brand-dark">
                     {allOnPageSelected ? <CheckSquare className="w-4 h-4 text-brand-dark" /> : <Square className="w-4 h-4" />}
                   </button>
                 </th>
                 <th className="px-4 py-3">
-                  <button onClick={() => handleSort('name')} className="flex items-center gap-1 font-medium text-slate-500 text-xs uppercase tracking-wide hover:text-slate-800">
+                  <button onClick={() => handleSort('name')} className="flex items-center gap-1 font-medium text-ink-2 text-xs uppercase tracking-wide hover:text-slate-800">
                     Bot <SortIcon k="name" />
                   </button>
                 </th>
                 <th className="px-4 py-3">
-                  <button onClick={() => handleSort('status')} className="flex items-center gap-1 font-medium text-slate-500 text-xs uppercase tracking-wide hover:text-slate-800">
+                  <button onClick={() => handleSort('status')} className="flex items-center gap-1 font-medium text-ink-2 text-xs uppercase tracking-wide hover:text-slate-800">
                     Status <SortIcon k="status" />
                   </button>
                 </th>
-                <th className="px-4 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Level</th>
+                <th className="px-4 py-3 font-medium text-ink-2 text-xs uppercase tracking-wide">Level</th>
                 <th className="px-4 py-3">
-                  <button onClick={() => handleSort('req7d')} className="flex items-center gap-1 font-medium text-slate-500 text-xs uppercase tracking-wide hover:text-slate-800">
+                  <button onClick={() => handleSort('req7d')} className="flex items-center gap-1 font-medium text-ink-2 text-xs uppercase tracking-wide hover:text-slate-800">
                     Reqs 7d <SortIcon k="req7d" />
                   </button>
                 </th>
                 <th className="px-4 py-3">
-                  <button onClick={() => handleSort('rev7d')} className="flex items-center gap-1 font-medium text-slate-500 text-xs uppercase tracking-wide hover:text-slate-800">
+                  <button onClick={() => handleSort('rev7d')} className="flex items-center gap-1 font-medium text-ink-2 text-xs uppercase tracking-wide hover:text-slate-800">
                     Rev 7d <SortIcon k="rev7d" />
                   </button>
                 </th>
                 <th className="px-4 py-3">
-                  <button onClick={() => handleSort('lastSeen')} className="flex items-center gap-1 font-medium text-slate-500 text-xs uppercase tracking-wide hover:text-slate-800">
+                  <button onClick={() => handleSort('lastSeen')} className="flex items-center gap-1 font-medium text-ink-2 text-xs uppercase tracking-wide hover:text-slate-800">
                     Last Seen <SortIcon k="lastSeen" />
                   </button>
                 </th>
-                <th className="px-4 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Actions</th>
+                <th className="px-4 py-3 font-medium text-ink-2 text-xs uppercase tracking-wide">Actions</th>
               </tr>
             </thead>
             <tbody>
               {pageSlice.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-slate-400">
+                  <td colSpan={8} className="px-4 py-12 text-center text-ink-3">
                     <RefreshCw className="w-6 h-6 mx-auto mb-2 opacity-30" />
                     No bots match your filters
                   </td>
@@ -423,12 +423,12 @@ export default function BotManagePage() {
 
                 return [
                   <tr key={bot.id}
-                    className={`border-b border-slate-50 transition-colors hover:bg-slate-50/60 cursor-pointer ${isExpanded ? 'bg-slate-50' : ''}`}
+                    className={`border-b border-slate-50 transition-colors hover:bg-canvas/60 cursor-pointer ${isExpanded ? 'bg-canvas' : ''}`}
                     onClick={() => setDetailBot(bot)}>
 
                     {/* Checkbox */}
                     <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
-                      <button onClick={() => toggleSelect(bot.id)} className="text-slate-300 hover:text-brand-dark">
+                      <button onClick={() => toggleSelect(bot.id)} className="text-edge hover:text-brand-dark">
                         {selected.has(bot.id) ? <CheckSquare className="w-4 h-4 text-brand-dark" /> : <Square className="w-4 h-4" />}
                       </button>
                     </td>
@@ -436,16 +436,16 @@ export default function BotManagePage() {
                     {/* Bot name */}
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-2.5">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${TYPE_COLORS[bot.type] ?? 'bg-slate-100 text-slate-600'}`}>
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${TYPE_COLORS[bot.type] ?? 'bg-slate-100 text-ink-2'}`}>
                           {bot.name[0]}
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
-                            <span className="font-semibold text-slate-900">{bot.name}</span>
+                            <span className="font-semibold text-ink">{bot.name}</span>
                             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${CONFIDENCE_DOT[bot.confidence]}`} title={`${bot.confidence} confidence`} />
                           </div>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-xs text-slate-400">{bot.company}</span>
+                            <span className="text-xs text-ink-3">{bot.company}</span>
                             <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${TYPE_COLORS[bot.type]}`}>
                               {TYPE_LABELS[bot.type]}
                             </span>
@@ -466,7 +466,7 @@ export default function BotManagePage() {
                             if (cfg.status === 'blocked') { setStatus(bot.id, 'allowed'); showToast(`${bot.name} allowed.`, () => setStatus(bot.id, 'blocked')); }
                             else requestBlock(bot.id);
                           }}
-                          className="text-slate-300 hover:text-slate-600 transition-colors"
+                          className="text-edge hover:text-ink-2 transition-colors"
                           title={cfg.status === 'blocked' ? 'Allow' : 'Block'}>
                           <Shield className="w-3.5 h-3.5" />
                         </button>
@@ -478,7 +478,7 @@ export default function BotManagePage() {
                       <span className={`text-sm ${ACCESS_BADGE[cfg.accessLevel]}`}>
                         {ACCESS_LABEL[cfg.accessLevel]}
                         {cfg.accessLevel === 'custom' && (
-                          <span className="ml-1 font-mono text-xs text-slate-500">
+                          <span className="ml-1 font-mono text-xs text-ink-2">
                             ({formatUsdcDollar(cfg.customPricing.pricePerPage)})
                           </span>
                         )}
@@ -486,17 +486,17 @@ export default function BotManagePage() {
                     </td>
 
                     {/* Requests 7d */}
-                    <td className="px-4 py-3.5 font-mono text-slate-700">{compactNumber(bot.req7d)}</td>
+                    <td className="px-4 py-3.5 font-mono text-ink">{compactNumber(bot.req7d)}</td>
 
                     {/* Revenue 7d */}
                     <td className="px-4 py-3.5 font-mono font-semibold">
-                      <span className={bot.rev7d > 0 ? 'text-brand-dark' : 'text-slate-300'}>
+                      <span className={bot.rev7d > 0 ? 'text-brand-dark' : 'text-edge'}>
                         {bot.rev7d > 0 ? formatUsdcDollar(bot.rev7d) : '—'}
                       </span>
                     </td>
 
                     {/* Last seen */}
-                    <td className="px-4 py-3.5 text-xs text-slate-400">
+                    <td className="px-4 py-3.5 text-xs text-ink-3">
                       {timeAgo(lastSeenDate(bot.daysAgoSeen))}
                     </td>
 
@@ -505,7 +505,7 @@ export default function BotManagePage() {
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => setExpandedEdit(isExpanded ? null : bot.id)}
-                          className={`p-1.5 rounded-lg transition-colors ${isExpanded ? 'bg-brand-dark text-white' : 'text-slate-400 hover:text-brand-dark hover:bg-slate-100'}`}
+                          className={`p-1.5 rounded-lg transition-colors ${isExpanded ? 'bg-brand-dark text-white' : 'text-ink-3 hover:text-brand-dark hover:bg-slate-100'}`}
                           title="Quick edit">
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
@@ -525,15 +525,15 @@ export default function BotManagePage() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between text-sm">
-            <span className="text-slate-400">{displayed.length} bots · page {page} of {totalPages}</span>
+          <div className="px-4 py-3 border-t border-edge-2 flex items-center justify-between text-sm">
+            <span className="text-ink-3">{displayed.length} bots · page {page} of {totalPages}</span>
             <div className="flex gap-1">
               <button onClick={() => setPage(p => Math.max(1, p-1))} disabled={page === 1}
-                className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                className="px-3 py-1.5 rounded-lg border border-edge text-ink-2 hover:bg-canvas disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
                 ← Prev
               </button>
               <button onClick={() => setPage(p => Math.min(totalPages, p+1))} disabled={page === totalPages}
-                className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                className="px-3 py-1.5 rounded-lg border border-edge text-ink-2 hover:bg-canvas disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
                 Next →
               </button>
             </div>
@@ -552,14 +552,14 @@ export default function BotManagePage() {
         return bot ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
-              <h3 className="font-bold text-slate-900 text-base">Block {bot.name}?</h3>
-              <p className="text-sm text-slate-600">
+              <h3 className="font-bold text-ink text-base">Block {bot.name}?</h3>
+              <p className="text-sm text-ink-2">
                 All requests from <strong>{bot.name}</strong> ({bot.company}) will receive a 403 response.
                 This affects ~<strong>{compactNumber(bot.req7d)}</strong> requests per week.
               </p>
               <div className="flex gap-2 pt-2">
                 <button onClick={() => setConfirmBlock(null)}
-                  className="flex-1 py-2 border border-slate-200 rounded-xl text-slate-600 font-semibold hover:bg-slate-50 transition-colors text-sm">
+                  className="flex-1 py-2 border border-edge rounded-xl text-ink-2 font-semibold hover:bg-canvas transition-colors text-sm">
                   Cancel
                 </button>
                 <button onClick={confirmBlockBot}

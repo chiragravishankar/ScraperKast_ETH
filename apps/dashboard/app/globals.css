@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,30 +8,99 @@
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    scroll-behavior: smooth;
   }
 
   body {
-    @apply bg-slate-50 text-slate-900;
+    @apply bg-canvas text-ink font-sans;
+    font-size: 14px;
+    line-height: 1.5;
   }
 
   * {
     @apply box-border;
+  }
+
+  /* Focus ring — consistent, accessible */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-accent/50 ring-offset-2 ring-offset-canvas;
+  }
+}
+
+@layer components {
+  /* ── Card ──────────────────────────────────────────────────────────── */
+  .card {
+    @apply bg-surface rounded-2xl border border-edge shadow-card;
+  }
+
+  .card-hover {
+    @apply card transition-shadow duration-200 hover:shadow-card-hover;
+  }
+
+  /* ── Buttons ────────────────────────────────────────────────────────── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg
+           px-4 py-2.5 text-sm font-semibold
+           transition-all duration-150 active:scale-[0.98]
+           disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none;
+  }
+
+  .btn-primary {
+    @apply btn bg-accent text-white hover:bg-accent-hover;
+  }
+
+  .btn-secondary {
+    @apply btn bg-surface text-ink border border-edge hover:bg-canvas;
+  }
+
+  .btn-ghost {
+    @apply btn text-ink-2 hover:bg-canvas hover:text-ink;
+  }
+
+  /* ── Badge ──────────────────────────────────────────────────────────── */
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-md px-2 py-0.5
+           text-2xs font-medium;
+  }
+
+  .badge-green  { @apply badge bg-emerald-50 text-emerald-700; }
+  .badge-red    { @apply badge bg-red-50 text-red-600; }
+  .badge-amber  { @apply badge bg-amber-50 text-amber-700; }
+  .badge-blue   { @apply badge bg-sky-50 text-sky-700; }
+  .badge-gray   { @apply badge bg-edge-2 text-ink-2; }
+
+  /* ── Input ──────────────────────────────────────────────────────────── */
+  .input {
+    @apply w-full rounded-lg border border-edge bg-surface
+           px-3 py-2.5 text-sm text-ink
+           placeholder:text-ink-3
+           focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/60
+           transition-colors;
+  }
+
+  /* ── Section header ─────────────────────────────────────────────────── */
+  .section-title {
+    @apply text-sm font-semibold text-ink;
+  }
+
+  .page-title {
+    @apply text-xl font-bold text-ink tracking-tight;
   }
 }
 
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 transparent;
+    scrollbar-color: #E5E5E5 transparent;
   }
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 4px;
-  }
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: #cbd5e1;
+  .scrollbar-thin::-webkit-scrollbar        { width: 4px; }
+  .scrollbar-thin::-webkit-scrollbar-track  { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb  {
+    background-color: #E5E5E5;
     border-radius: 2px;
   }
+
+  /* Tabular number spacing for financial figures */
+  .tabular { font-variant-numeric: tabular-nums; }
 }

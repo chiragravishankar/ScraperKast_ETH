@@ -9,7 +9,8 @@ interface StatCardProps {
   sub?:       string;
   change?:    { text: string; positive: boolean };
   icon?:      LucideIcon;
-  accent?:    boolean; // dark brand-colour card
+  /** Visually emphasise this card (slightly darker border, accent value color) */
+  accent?:    boolean;
   className?: string;
 }
 
@@ -17,40 +18,37 @@ export default function StatCard({ title, value, sub, change, icon: Icon, accent
   return (
     <div
       className={cn(
-        'rounded-xl p-5 border transition-shadow hover:shadow-md',
-        accent
-          ? 'bg-brand-dark text-white border-brand-dark'
-          : 'bg-white text-slate-900 border-slate-200',
+        'card-hover p-5 flex flex-col gap-3',
+        accent && 'border-accent/20',
         className,
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className={cn('text-xs font-semibold uppercase tracking-wider', accent ? 'text-white/70' : 'text-slate-500')}>
+        <p className="text-2xs font-semibold uppercase tracking-wider text-ink-2">
           {title}
         </p>
         {Icon && (
-          <span className={cn('p-1.5 rounded-lg', accent ? 'bg-white/15' : 'bg-slate-100')}>
-            <Icon className={cn('w-4 h-4', accent ? 'text-white' : 'text-brand-dark')} />
+          <span className="p-1.5 rounded-lg bg-edge-2 shrink-0">
+            <Icon className="w-3.5 h-3.5 text-ink-2" />
           </span>
         )}
       </div>
 
-      <p className={cn('mt-3 text-2xl font-bold tabular-nums leading-none', accent ? 'text-white' : 'text-slate-900')}>
+      <p className={cn(
+        'text-2xl font-bold tabular leading-none',
+        accent ? 'text-accent' : 'text-ink',
+      )}>
         {value}
       </p>
 
       {(sub || change) && (
-        <div className="mt-2 flex items-center gap-2 text-xs">
-          {sub && <span className={accent ? 'text-white/60' : 'text-slate-400'}>{sub}</span>}
+        <div className="flex items-center gap-2 text-xs">
+          {sub && <span className="text-ink-3">{sub}</span>}
           {change && (
-            <span
-              className={cn(
-                'font-semibold',
-                change.positive
-                  ? accent ? 'text-green-300' : 'text-emerald-600'
-                  : accent ? 'text-red-300'   : 'text-red-500',
-              )}
-            >
+            <span className={cn(
+              'font-semibold',
+              change.positive ? 'text-emerald-600' : 'text-red-500',
+            )}>
               {change.text}
             </span>
           )}

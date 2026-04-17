@@ -28,8 +28,8 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-xl font-bold text-slate-900">Overview</h1>
-        <p className="text-sm text-slate-500 mt-0.5">Today's bot activity and revenue across your site</p>
+        <h1 className="page-title">Overview</h1>
+        <p className="text-sm text-ink-2 mt-1">Today's bot activity and revenue across your site</p>
       </div>
 
       {/* Stat cards */}
@@ -67,15 +67,15 @@ export default async function DashboardPage() {
 
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-5">
-          <h2 className="text-sm font-semibold text-slate-700 mb-4">Revenue (Last 7 days)</h2>
+        <div className="lg:col-span-2 card p-5">
+          <h2 className="section-title mb-4">Revenue (Last 7 days)</h2>
           <Suspense fallback={<ChartSkeleton />}>
             <RevenueChart data={daily} />
           </Suspense>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <h2 className="text-sm font-semibold text-slate-700 mb-4">Bot Traffic Share</h2>
+        <div className="card p-5">
+          <h2 className="section-title mb-4">Bot Traffic Share</h2>
           <Suspense fallback={<ChartSkeleton />}>
             <BotPieChart data={botDist} />
           </Suspense>
@@ -84,15 +84,15 @@ export default async function DashboardPage() {
 
       {/* Requests chart + activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-5">
-          <h2 className="text-sm font-semibold text-slate-700 mb-4">Requests (Last 24h)</h2>
+        <div className="lg:col-span-2 card p-5">
+          <h2 className="section-title mb-4">Requests (Last 24h)</h2>
           <Suspense fallback={<ChartSkeleton />}>
             <RequestsChart data={hourly} />
           </Suspense>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <h2 className="text-sm font-semibold text-slate-700 mb-3">Live Activity</h2>
+        <div className="card p-5">
+          <h2 className="section-title mb-3">Live Activity</h2>
           <Suspense fallback={<CardSkeleton />}>
             <ActivityFeed />
           </Suspense>

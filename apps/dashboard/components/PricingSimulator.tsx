@@ -100,21 +100,21 @@ export default function PricingSimulator({ prefillRule }: PricingSimulatorProps)
       <div className="space-y-3">
         {/* Path */}
         <div>
-          <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Request Path</label>
+          <label className="text-xs font-semibold text-ink-2 uppercase tracking-wide">Request Path</label>
           <div className="mt-1.5 relative">
             <input
               type="text"
               placeholder="/blog/my-post"
               value={path}
               onChange={e => setPath(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark"
+              className="w-full px-3 py-2.5 rounded-xl border border-edge text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark"
             />
           </div>
           {/* Example pills */}
           <div className="flex gap-1 flex-wrap mt-1.5">
             {EXAMPLE_PATHS.slice(0, 4).map(p => (
               <button key={p} onClick={() => setPath(p)}
-                className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 hover:bg-brand-dark/10 hover:text-brand-dark transition-colors">
+                className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-ink-2 hover:bg-brand-dark/10 hover:text-brand-dark transition-colors">
                 {p}
               </button>
             ))}
@@ -123,15 +123,15 @@ export default function PricingSimulator({ prefillRule }: PricingSimulatorProps)
 
         {/* Bot */}
         <div>
-          <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Bot</label>
+          <label className="text-xs font-semibold text-ink-2 uppercase tracking-wide">Bot</label>
           <div className="mt-1.5 relative">
             <select value={botId} onChange={e => setBotId(e.target.value)}
-              className="w-full appearance-none px-3 py-2.5 pr-8 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark text-slate-800">
+              className="w-full appearance-none px-3 py-2.5 pr-8 rounded-xl border border-edge text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/30 focus:border-brand-dark text-slate-800">
               {KNOWN_BOTS.map(b => (
                 <option key={b.id} value={b.id}>{b.label}</option>
               ))}
             </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-3 pointer-events-none" />
           </div>
         </div>
 
@@ -149,44 +149,44 @@ export default function PricingSimulator({ prefillRule }: PricingSimulatorProps)
         <div className="space-y-3 animate-fade-in">
 
           {/* Verdict */}
-          <div className={`rounded-xl border p-4 ${result.matched ? 'bg-brand-dark/5 border-brand-dark/20' : 'bg-slate-50 border-slate-200'}`}>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Result</p>
+          <div className={`rounded-xl border p-4 ${result.matched ? 'bg-brand-dark/5 border-brand-dark/20' : 'bg-canvas border-edge'}`}>
+            <p className="text-xs font-semibold text-ink-2 uppercase tracking-wide mb-2">Result</p>
             <div className="space-y-1.5 text-sm">
               <div className="flex gap-2">
-                <span className="text-slate-400 w-20 shrink-0">Path</span>
-                <span className="font-mono text-slate-700">{path}</span>
+                <span className="text-ink-3 w-20 shrink-0">Path</span>
+                <span className="font-mono text-ink">{path}</span>
               </div>
               <div className="flex gap-2">
-                <span className="text-slate-400 w-20 shrink-0">Bot</span>
-                <span className="text-slate-700">{KNOWN_BOTS.find(b => b.id === botId)?.label ?? botId}</span>
+                <span className="text-ink-3 w-20 shrink-0">Bot</span>
+                <span className="text-ink">{KNOWN_BOTS.find(b => b.id === botId)?.label ?? botId}</span>
               </div>
-              <div className="flex gap-2 items-center pt-1 border-t border-slate-200 mt-2">
-                <span className="text-slate-400 w-20 shrink-0">Matched</span>
+              <div className="flex gap-2 items-center pt-1 border-t border-edge mt-2">
+                <span className="text-ink-3 w-20 shrink-0">Matched</span>
                 {result.matched ? (
                   <span className="font-semibold text-brand-dark flex items-center gap-1.5">
                     <CheckCircle className="w-3.5 h-3.5 text-emerald-500" /> {result.matched.name}
                   </span>
                 ) : (
-                  <span className="text-slate-500 flex items-center gap-1.5">
-                    <XCircle className="w-3.5 h-3.5 text-slate-400" /> Default rule
+                  <span className="text-ink-2 flex items-center gap-1.5">
+                    <XCircle className="w-3.5 h-3.5 text-ink-3" /> Default rule
                   </span>
                 )}
               </div>
               <div className="flex gap-2">
-                <span className="text-slate-400 w-20 shrink-0">Price</span>
+                <span className="text-ink-3 w-20 shrink-0">Price</span>
                 <span className={`font-bold tabular-nums text-base ${effectivePrice === 0 ? 'text-emerald-600' : 'text-brand-dark'}`}>
                   {effectivePrice === 0 ? 'FREE' : formatUsdcDollar(effectivePrice)}
-                  <span className="text-xs font-normal text-slate-400 ml-1">
+                  <span className="text-xs font-normal text-ink-3 ml-1">
                     {effectivePrice > 0 && `(${effectivePrice} µUSDC)`}
                   </span>
                 </span>
               </div>
               <div className="flex gap-2">
-                <span className="text-slate-400 w-20 shrink-0">License</span>
-                <span className="text-slate-700">{LICENSE_LABELS[effectiveLicense] ?? effectiveLicense}</span>
+                <span className="text-ink-3 w-20 shrink-0">License</span>
+                <span className="text-ink">{LICENSE_LABELS[effectiveLicense] ?? effectiveLicense}</span>
               </div>
               <div className="flex gap-2">
-                <span className="text-slate-400 w-20 shrink-0">Tier</span>
+                <span className="text-ink-3 w-20 shrink-0">Tier</span>
                 <span className={effectivePrice === 0 ? 'text-emerald-600 font-semibold' : 'text-brand-dark font-semibold'}>
                   {effectivePrice === 0 ? 'Free' : 'Paid'}
                 </span>
@@ -196,17 +196,17 @@ export default function PricingSimulator({ prefillRule }: PricingSimulatorProps)
 
           {/* Rules considered */}
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Rules evaluated ({result.considered.length})</p>
+            <p className="text-xs font-semibold text-ink-2 uppercase tracking-wide mb-2">Rules evaluated ({result.considered.length})</p>
             <div className="space-y-1">
               {result.considered.map(({ rule, matchedPath, matchedBot }, i) => {
                 const isMatch = matchedPath && matchedBot && result.matched?.id === rule.id;
                 return (
                   <div key={rule.id}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${isMatch ? 'bg-brand-dark/5 border border-brand-dark/20' : 'bg-slate-50'}`}>
-                    <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-500 text-[10px] font-bold flex items-center justify-center shrink-0">
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${isMatch ? 'bg-brand-dark/5 border border-brand-dark/20' : 'bg-canvas'}`}>
+                    <span className="w-5 h-5 rounded-full bg-slate-200 text-ink-2 text-[10px] font-bold flex items-center justify-center shrink-0">
                       {i + 1}
                     </span>
-                    <span className={`flex-1 ${isMatch ? 'font-semibold text-brand-dark' : 'text-slate-600'}`}>{rule.name}</span>
+                    <span className={`flex-1 ${isMatch ? 'font-semibold text-brand-dark' : 'text-ink-2'}`}>{rule.name}</span>
                     <span className={`shrink-0 ${matchedPath ? 'text-emerald-500' : 'text-red-400'}`}>path {matchedPath ? '✓' : '✗'}</span>
                     <span className={`shrink-0 ${matchedBot ? 'text-emerald-500' : 'text-red-400'}`}>bot {matchedBot ? '✓' : '✗'}</span>
                     {isMatch && <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
@@ -214,7 +214,7 @@ export default function PricingSimulator({ prefillRule }: PricingSimulatorProps)
                 );
               })}
               {result.considered.length === 0 && (
-                <p className="text-xs text-slate-400 text-center py-2">No enabled rules</p>
+                <p className="text-xs text-ink-3 text-center py-2">No enabled rules</p>
               )}
             </div>
           </div>
