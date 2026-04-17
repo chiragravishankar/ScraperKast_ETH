@@ -22,5 +22,14 @@ export async function GET(request: Request) {
     share:   Math.floor(b.revenueEarned * 0.95),
   }));
 
-  return NextResponse.json({ daily, byBot, totalRevenue, ownerShare, platformFee });
+  return NextResponse.json({
+    daily,
+    byBot,
+    totals: {
+      total:       totalRevenue,
+      ownerShare,
+      platformFees: platformFee,
+      avgPerDay:   days > 0 ? Math.floor(totalRevenue / days) : 0,
+    },
+  });
 }
