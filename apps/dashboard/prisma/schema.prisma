@@ -1,0 +1,183 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "sqlite"
+  // URL is provided via prisma.config.ts (Prisma 7) — do NOT add url here
+}
+
+// ── User ──────────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+
+  // Auto-generated smart wallet (one per user, derived from userId)
+  smartWalletAddress    String? // On-chain address — shown to users/bots
+  smartWalletEncryptedKey String? // AES-256-CBC encrypted private key (server-side only)
+
+  // Custodial balance in USDC — mirrors what is actually in the smart wallet
+  balance           Float   @default(0.0)
+
+  // User's external withdrawal address (where they want to receive withdrawals)
+  withdrawalAddress String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sites              Site[]
+  apiKeys            ApiKey[]
+  walletTransactions WalletTransaction[]
+}
+
+// ── WalletTransaction ─────────────────────────────────────────────────────────
+// Tracks deposits, withdrawals, and revenue credits for the platform wallet.
+
+model WalletTransaction {
+  id     String @id @default(cuid())
+  userId String
+
+  // "deposit" | "withdrawal" | "revenue"
+  type   String
+
+  // Amount in USDC (positive = credit, negative = debit)
+  amount Float
+
+  // Blockchain details
+  network     String   // "base-sepolia" | "sepolia"
+  txHash      String?  @unique
+  verified    Boolean  @default(false)
+
+  // Addresses involved
+  fromAddress String?
+  toAddress   String?
+
+  // Link to a site's bot payment that triggered a revenue credit
+  siteId      String?
+
+  // "pending" | "confirmed" | "failed"
+  status String @default("pending")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([txHash])
+  @@index([status])
+  @@index([type])
+}
+
+// ── Site ──────────────────────────────────────────────────────────────────────
+
+model Site {
+  id          String  @id @default(cuid())
+  userId      String
+
+  // Basic info
+  name        String
+  url         String
+  setupMethod String  @default("code")
+  verified    Boolean @default(true)
+  active      Boolean @default(true)
+
+  // Payment configuration (DYNAMIC - set by user, never hardcoded)
+  defaultPrice  Float   @default(0.001)
+  walletAddress String? // User's wallet for receiving payments (testnet)
+  network       String  @default("base-sepolia") // "base-sepolia" | "sepolia"
+
+  // Payment methods enabled
+  enableX402   Boolean @default(true)
+  enableUniswap Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  botRules     BotRule[]
+  transactions Transaction[]
+
+  @@index([userId])
+}
+
+// ── BotRule ───────────────────────────────────────────────────────────────────
+
+model BotRule {
+  id      String  @id @default(cuid())
+  siteId  String
+  botId   String
+  action  String  @default("charge") // "allow" | "block" | "charge"
+  price   Float   @default(0.001)
+  enabled Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, botId])
+  @@index([siteId])
+}
+
+// ── Transaction ───────────────────────────────────────────────────────────────
+
+model Transaction {
+  id     String @id @default(cuid())
+  siteId String
+
+  // Bot details
+  botId     String // e.g. "gptbot"
+  botName   String // e.g. "GPTBot"
+  userAgent String @default("")
+
+  // Payment details
+  method   String // "x402" | "uniswap" | "direct"
+  amount   Float  // Amount in USDC
+  currency String @default("USDC")
+
+  // Token info (for Uniswap swaps — user paid with another token)
+  tokenIn  String? // e.g. "WETH"
+  amountIn Float?  // Amount of tokenIn before swap
+
+  // Blockchain proof (testnet!)
+  network     String  // "base-sepolia" | "sepolia"
+  txHash      String  @unique
+  verified    Boolean @default(false)
+  blockNumber Int?
+
+  // Request details
+  path String // e.g. "/blog/post-1"
+
+  createdAt DateTime @default(now())
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([siteId, createdAt])
+  @@index([txHash])
+  @@index([method])
+  @@index([botId])
+}
+
+// ── ApiKey ────────────────────────────────────────────────────────────────────
+
+model ApiKey {
+  id     String @id @default(cuid())
+  userId String
+
+  key    String  @unique // Hashed API key
+  name   String? // Optional label e.g. "Production", "Test"
+  active Boolean @default(true)
+
+  lastUsed  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([key])
+}
