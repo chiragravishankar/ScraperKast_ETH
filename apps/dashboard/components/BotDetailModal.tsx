@@ -348,7 +348,7 @@ function HistoryTab({ bot }: { bot: BotDef }) {
 
 type Tab = 'overview' | 'access' | 'rate-limit' | 'history';
 
-const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
+const TABS: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id:'overview',   label:'Overview',     icon: Activity  },
   { id:'access',     label:'Access',       icon: Shield    },
   { id:'rate-limit', label:'Rate Limit',   icon: Zap       },
