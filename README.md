@@ -2,10 +2,6 @@
 
 **Monetize AI bot traffic with HTTP 402 and autonomous blockchain payments**
 
-Built for ETHGlobal Online Hackathon (April 29 - May 3, 2026)
-
-> 🏆 **Targeting:** KeeperHub Prize ($5K) + Uniswap Prize ($5K)
-
 ---
 
 ## 🎯 One-Liner
@@ -211,24 +207,6 @@ This project was developed with assistance from AI tools during the ETHGlobal On
 **All code was reviewed, tested, and debugged by the development team.** AI tools were used as coding assistants, not autonomous developers.
 
 ---
-
-## 🏆 Hackathon Prizes
-
-### KeeperHub Prize ($5,000)
-
-**Integration highlights:**
-- Complete x402 protocol implementation
-- Autonomous payment instructions in every 402 response
-- Real-world use case (AI bot monetization)
-- Full on-chain verification
-
-### Uniswap Prize ($5,000)
-
-**Integration highlights:**
-- Complete Uniswap V3 SDK integration
-- Multi-token support (20+ ERC-20 tokens)
-- Real-time swap quotes via API
-- Automatic USDC conversion
 
 ---
 
