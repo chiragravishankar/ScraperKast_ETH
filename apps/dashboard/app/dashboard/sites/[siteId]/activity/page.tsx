@@ -1,13 +1,38 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Download, TrendingUp, Shield, DollarSign, Activity } from 'lucide-react';
 import { compactNumber, formatUsdcDollar } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 
-// ── Mock top bots (hardcoded for now, matches API mock) ──────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
 
-const TOP_BOTS = [
+type BotRow = {
+  name: string;
+  type: string;
+  requests: number;
+  paid: number;
+  blocked: number;
+  revenue: number; // µUSDC, for formatUsdcDollar
+};
+
+type RevenueStats = {
+  totalEarnings: number;
+  totalTransactions: number;
+  topBots: Array<{ botId: string; botName: string; amount: number; count: number }>;
+};
+
+// ── Bot type classifier ───────────────────────────────────────────────────────
+
+function classifyBotType(name: string): string {
+  if (/gptbot|claudebot|perplexity|chatgpt|gemini|customaibot/i.test(name)) return 'AI';
+  if (/firecrawl|diffbot|semrush|ahrefs|bytespider/i.test(name)) return 'Commercial';
+  return 'Open Source';
+}
+
+// ── Fallback mock data (shown when no real transactions exist yet) ─────────────
+
+const MOCK_BOTS: BotRow[] = [
   { name: 'GPTBot',    type: 'AI',          requests: 245, paid: 12,  blocked: 233, revenue: 600_000   },
   { name: 'Firecrawl', type: 'Commercial',  requests: 187, paid: 45,  blocked: 142, revenue: 2_250_000 },
   { name: 'ClaudeBot', type: 'AI',          requests: 156, paid: 0,   blocked: 156, revenue: 0         },
@@ -92,6 +117,27 @@ export default function BotActivityPage({
 }) {
   const [timeRange, setTimeRange] = useState('7d');
   const [filter,    setFilter]    = useState<'all' | 'ai' | 'commercial' | 'oss'>('all');
+  const [stats,     setStats]     = useState<RevenueStats | null>(null);
+
+  // Fetch real analytics on mount and when siteId changes
+  useEffect(() => {
+    fetch(`/api/sites/${params.siteId}/revenue/stats`)
+      .then(r => r.ok ? r.json() as Promise<RevenueStats> : null)
+      .then(data => { if (data) setStats(data); })
+      .catch(() => { /* non-fatal — falls back to mock */ });
+  }, [params.siteId]);
+
+  // Use real top-bots data when available; fall back to mock for demo sites with no history
+  const TOP_BOTS: BotRow[] = stats?.topBots && stats.topBots.length > 0
+    ? stats.topBots.map(b => ({
+        name:     b.botName,
+        type:     classifyBotType(b.botName),
+        requests: b.count,
+        paid:     b.count,  // all DB transactions are verified (paid)
+        blocked:  0,
+        revenue:  Math.round(b.amount * 1_000_000), // USDC → µUSDC
+      }))
+    : MOCK_BOTS;
 
   const filtered = TOP_BOTS.filter(b => {
     if (filter === 'ai')         return b.type === 'AI';

@@ -9,13 +9,14 @@
  *  • Bot + proof      → verifies txHash on-chain, serves content on success
  *
  * Recipient address: DEMO_WALLET_ADDRESS env var (or first user's smart wallet).
- * No database writes — fully self-contained for demo reliability.
+ * Verified payments are logged to the analytics DB so bots appear in the dashboard.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createPublicClient, http, parseAbi, type Address } from 'viem';
+import { createPublicClient, http, parseAbi } from 'viem';
 import { baseSepolia } from 'viem/chains';
 import { getNetworkConfig } from '@/lib/config';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -112,6 +113,75 @@ async function verifyPayment(txHash: string, recipient: string): Promise<boolean
   }
 }
 
+// ── Analytics: log verified payment to DB ─────────────────────────────────────
+
+const DEMO_SITE_ID = process.env.DEMO_SITE_ID ?? 'site_techblog';
+
+async function logPaymentToDb(txHash: string, userAgent: string, recipient: string): Promise<void> {
+  try {
+    const site = await prisma.site.findUnique({
+      where:  { id: DEMO_SITE_ID },
+      select: { id: true, userId: true },
+    });
+    if (!site) {
+      console.warn(`[demo-content] DEMO_SITE_ID "${DEMO_SITE_ID}" not found in DB — skipping analytics`);
+      return;
+    }
+
+    // Parse bot name from UA: "CustomAIBot/1.0 (Research Agent)" → "CustomAIBot"
+    const botName = userAgent.match(/^([A-Za-z0-9\-\.]+)/)?.[1] ?? 'CustomAIBot';
+    const botId   = botName.toLowerCase();
+
+    // Transaction is @unique on txHash — upsert so duplicate proofs are no-ops
+    await prisma.transaction.upsert({
+      where:  { txHash },
+      create: {
+        siteId:    site.id,
+        botId,
+        botName,
+        userAgent,
+        method:    'x402',
+        amount:    PRICE_USDC,
+        currency:  'USDC',
+        network:   NETWORK,
+        txHash,
+        verified:  true,
+        path:      '/api/demo-content',
+      },
+      update: {}, // idempotent — nothing to change on replay
+    });
+
+    // WalletTransaction — credit revenue to site owner's balance
+    const existing = await prisma.walletTransaction.findFirst({ where: { txHash } });
+    if (!existing) {
+      await prisma.walletTransaction.create({
+        data: {
+          userId:    site.userId,
+          type:      'revenue',
+          amount:    PRICE_USDC,
+          network:   NETWORK,
+          txHash,
+          verified:  true,
+          toAddress: recipient || undefined,
+          siteId:    site.id,
+          status:    'confirmed',
+        },
+      });
+
+      // Increment custodial balance
+      await prisma.user.update({
+        where: { id: site.userId },
+        data:  { balance: { increment: PRICE_USDC } },
+      });
+    }
+
+    console.log(`[demo-content] 📊 Analytics logged: bot=${botName} site=${site.id} amount=${PRICE_USDC} USDC`);
+  } catch (err) {
+    // Non-fatal — content is still served even if analytics fail
+    console.error('[demo-content] Analytics logging failed (non-fatal):', err);
+  }
+}
+
 // ── Resolve recipient wallet ───────────────────────────────────────────────────
 
 function getRecipientWallet(): string {
@@ -154,6 +224,8 @@ export async function GET(request: NextRequest) {
 
     if (verified) {
       console.log(`[demo-content] ✅ Payment verified. txHash=${txHash} ua=${userAgent}`);
+      // Fire-and-forget analytics (non-blocking — content served regardless)
+      void logPaymentToDb(txHash, userAgent, recipient);
       return new NextResponse(
         CONTENT_HTML.replace(
           '</article>',
