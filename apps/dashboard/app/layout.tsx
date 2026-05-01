@@ -1,6 +1,26 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import SolanaProviders from '@/components/SolanaProviders';
+import { Inter, Outfit, Space_Grotesk } from 'next/font/google';
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+
+const outfit = Outfit({
+  subsets: ['latin'],
+  variable: '--font-outfit',
+  weight: ['300', '400', '500', '600', '700', '800'],
+  display: 'swap',
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-space',
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'ScraperKast Dashboard',
@@ -9,11 +29,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning
+          className={`${inter.variable} ${outfit.variable} ${spaceGrotesk.variable}`}>
       <body>
-        <SolanaProviders>
-          {children}
-        </SolanaProviders>
+        {children}
       </body>
     </html>
   );
