@@ -1,6 +1,60 @@
+# ── Dependencies ──────────────────────────────────────────────────────────────
 node_modules/
+.pnp
+.pnp.js
+
+# ── Build outputs ──────────────────────────────────────────────────────────────
 dist/
+build/
+out/
+.next/
+apps/landing/.next/
+*.tsbuildinfo
+
+# ── Environment variables (NEVER commit secrets) ───────────────────────────────
 .env
-.DS_Store
+.env.local
+.env*.local
+.env.development
+.env.production
+
+# ── Databases ─────────────────────────────────────────────────────────────────
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ── OS / Editor ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.pem
+
+# ── Testing / Coverage ────────────────────────────────────────────────────────
 coverage/
+.nyc_output/
+
+# ── Tooling ───────────────────────────────────────────────────────────────────
+.vercel
+.turbo
+.claude/
+
+# ── Prisma ────────────────────────────────────────────────────────────────────
+prisma/*.db
+prisma/*.db-journal
+apps/dashboard/prisma/*.db
+apps/dashboard/prisma/*.db-journal
+
+# ── Next.js ───────────────────────────────────────────────────────────────────
+next-env.d.ts

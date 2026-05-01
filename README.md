@@ -1,210 +1,270 @@
-# 🌊 ScraperKast
+# ScraperKast - Autonomous AI Agent Payment Infrastructure
 
-**AI bot paywall for Express.js — open-source alternative to TollBit.**
+**Monetize AI bot traffic with HTTP 402 and autonomous blockchain payments**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-02C39A.svg)](./LICENSE)
-[![npm version](https://img.shields.io/npm/v/@scraperkast/middleware-express?color=028090)](https://www.npmjs.com/package/@scraperkast/middleware-express)
-[![npm version](https://img.shields.io/npm/v/@scraperkast/core?color=00A896&label=core)](https://www.npmjs.com/package/@scraperkast/core)
-[![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-028090.svg)](./CONTRIBUTING.md)
+Built for ETHGlobal Online Hackathon (April 29 - May 3, 2026)
 
-AI companies — OpenAI, Anthropic, Google, Perplexity — are training models
-on web content right now. Publishers get nothing. ScraperKast changes that.
-
-Add five lines of middleware to your Express app and every AI bot that hits
-your site gets a machine-readable price tag. They pay, or they don't get in.
-Human visitors never see a thing.
+> 🏆 **Targeting:** KeeperHub Prize ($5K) + Uniswap Prize ($5K)
 
 ---
 
-## Features
+## 🎯 One-Liner
 
-- **🤖 Detects 18 AI bots** — GPTBot, Claude, PerplexityBot, Google-Extended,
-  CCBot, and more, by User-Agent pattern matching
-- **💰 Flexible pricing rules** — charge per path, per bot, or globally;
-  wildcards, per-bot overrides, and free tiers all supported
-- **🔐 JWT authentication** — bots that have paid send a signed token;
-  the middleware verifies it in microseconds with no database round-trip
-- **📊 Built-in analytics** — track every access event, 402 issuance, and
-  revenue in memory (database persistence coming soon)
-- **🏠 Self-hostable for free** — runs entirely inside your existing Express
-  app; no CDN, no reverse proxy, no external service required
-- **🔓 MIT licensed** — audit every line, fork it, contribute to it
+The first platform that lets publishers charge AI agents per-page using HTTP 402, autonomous on-chain payments, and multi-token support via Uniswap — ending the free-lunch era for GPT, Claude, and 200+ other AI scrapers.
 
 ---
 
-## Quick start
+## 🔥 The Problem
+
+**AI agents are scraping the web for free.**
+
+- 200+ AI bots (GPTBot, ClaudeBot, Perplexity) crawl millions of pages daily
+- Publishers spend $$$$ on infrastructure to serve bot traffic
+- Zero revenue from bots → subsidizing AI training with hosting costs
+- Traditional paywalls don't work (agents can't fill forms)
+- Robots.txt is a suggestion, not enforcement
+
+**Publishers need a way to charge bots that actually works.**
+
+---
+
+## ✨ The Solution
+
+**ScraperKast = HTTP 402 + KeeperHub + Uniswap**
+
+1. **Detect AI bots** - 200+ agent signatures (GPTBot, ClaudeBot, etc.)
+2. **Return HTTP 402** - "Payment Required" with autonomous payment instructions
+3. **Accept any token** - Bots pay in ETH, USDC, DAI, or 20+ ERC-20s via Uniswap
+4. **Auto-convert to USDC** - Revenue credited instantly to publisher wallet
+5. **Withdraw anytime** - Publishers withdraw to their personal wallet on Base Sepolia
+
+**No forms. No APIs to integrate. Just autonomous payments.**
+
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────┐
+│  AI Agent   │ (GPTBot, Claude, etc.)
+└──────┬──────┘
+       │ GET /article
+       ▼
+┌─────────────────────┐
+│  ScraperKast CDN    │ ← Middleware detects bot
+└──────┬──────────────┘
+       │ Is bot? → Yes
+       ▼
+┌─────────────────────┐
+│   HTTP 402          │ ← Payment instructions
+│   KeeperHub x402    │   • Pay to publisher wallet
+│   + Uniswap quote   │   • Any token → USDC swap
+└──────┬──────────────┘
+       │ Agent executes payment
+       ▼
+┌─────────────────────┐
+│   Blockchain        │ ← On-chain verification
+│   Base Sepolia      │   • Validate tx hash
+└──────┬──────────────┘
+       │ Payment verified
+       ▼
+┌─────────────────────┐
+│   Content Served    │ ← Agent gets content
+│   + Balance Updated │   Publisher earns $$$
+└─────────────────────┘
+```
+
+**Key Innovation:** Each user gets an auto-generated smart wallet. Bots pay directly to it. No shared hot wallet, no custody risk.
+
+---
+
+## 🛠️ Tech Stack
+
+**Frontend:**
+- Next.js 14 (App Router)
+- TypeScript
+- Tailwind CSS
+- Supabase Auth
+
+**Backend:**
+- Prisma ORM (PostgreSQL)
+- viem (Ethereum interactions)
+- Next.js API Routes
+
+**Blockchain:**
+- Base Sepolia (primary testnet)
+- Sepolia (fallback)
+- Smart wallet system (deterministic per-user)
+
+**Integrations:**
+- **KeeperHub** - x402 protocol for autonomous payments
+- **Uniswap V3** - Multi-token support with auto-conversion
+- Base Sepolia USDC (0x036CbD53842c5426634e7929541eC2318f3dCF7e)
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
 
 ```bash
-npm install @scraperkast/middleware-express
+Node.js 18+
+PostgreSQL database
+Base Sepolia testnet ETH
+Base Sepolia testnet USDC
 ```
 
-```ts
-import express from 'express';
-import { scraperKast } from '@scraperkast/middleware-express';
+### Installation
 
-const app = express();
+```bash
+# Clone repo
+git clone https://github.com/YOUR_USERNAME/ScraperKast_ETH.git
+cd ScraperKast_ETH
 
-app.use(scraperKast({
-  jwtSecret: process.env.JWT_SECRET!,
-  rules: [
-    { id: 'blog', path: '/blog/*', pricePerPage: 100, licenseType: 'summarization' },
-  ],
-}));
+# Install dependencies
+npm install
 
-app.get('/blog/:slug', (req, res) => res.json({ slug: req.params.slug }));
-app.listen(3000);
+# Set up environment variables
+cp .env.example .env.local
+# Fill in your values (see .env.example for details)
+
+# Set up database
+npx prisma db push
+npx prisma generate
+
+# Run development server
+npm run dev --workspace=@scraperkast/dashboard
 ```
 
-A human visitor to `/blog/my-post` gets a normal 200. GPTBot without a token
-gets a 402:
+### Environment Variables
 
-```json
-{
-  "error": "Payment Required",
-  "bot": "OpenAI GPTBot",
-  "pricing": { "pricePerPage": 100, "currency": "USD" },
-  "paymentUrl": "https://api.scraperkast.com/pay?bot=OpenAI+GPTBot&path=%2Fblog%2Fmy-post",
-  "documentation": "https://docs.scraperkast.com"
-}
+See `.env.example` for complete list. Key variables:
+
+```env
+# Database
+DATABASE_URL="postgresql://..."
+
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL="https://xxx.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="xxx"
+
+# Base Sepolia RPC
+NEXT_PUBLIC_BASE_SEPOLIA_RPC="https://sepolia.base.org"
+
+# Smart Wallet Encryption
+WALLET_ENCRYPTION_KEY="your-32-char-key"
 ```
+
+**⚠️ Security:** Never commit `.env` files! All secrets use testnet keys only.
 
 ---
 
-## Packages
+## 📊 Features
 
-This is an npm workspace monorepo. Each package is independently published.
+### ✅ Implemented
 
-| Package | Version | Description |
-|---|---|---|
-| [`@scraperkast/core`](./packages/core) | [![npm](https://img.shields.io/npm/v/@scraperkast/core?label=%20)](https://www.npmjs.com/package/@scraperkast/core) | Bot detection, pricing engine, JWT auth, analytics |
-| [`@scraperkast/middleware-express`](./packages/middleware-express) | [![npm](https://img.shields.io/npm/v/@scraperkast/middleware-express?label=%20)](https://www.npmjs.com/package/@scraperkast/middleware-express) | Express.js middleware factory |
+- [x] AI bot detection (200+ agents)
+- [x] HTTP 402 Payment Required responses
+- [x] KeeperHub x402 protocol integration
+- [x] Uniswap V3 swap quotes
+- [x] Multi-token payment acceptance (ETH, USDC, DAI, WETH, etc.)
+- [x] Auto-generated smart wallet per user
+- [x] On-chain payment verification
+- [x] Real-time revenue dashboard
+- [x] Transaction history with blockchain proofs
+- [x] Withdrawal flow to personal wallet
+- [x] Bot rule customization (whitelist/pricing per bot)
+
+### 🎨 UI Highlights
+
+- **Purple gradient wallet** - Professional, crypto-native design
+- **Revenue analytics** - Real-time charts and metrics
+- **Transaction explorer** - Direct links to Base Sepolia block explorer
+- **Mobile responsive** - Works on all devices
 
 ---
 
-## Repository structure
+## 🤖 AI Tool Usage
+
+This project was developed with assistance from AI tools during the ETHGlobal Online Hackathon (April 29 - May 3, 2026).
+
+### Tools Used:
+- **Claude Code** (Anthropic) - Full-stack development assistance
+  - Database schema design
+  - API endpoint implementation
+  - Frontend component development
+  - Smart contract integration logic
+  
+- **Claude (claude.ai)** - Project planning and architecture
+  - System architecture decisions
+  - Integration strategy
+  - Documentation writing
+  - Code review and debugging
+
+### Human Contribution:
+- Product vision and requirements definition
+- Integration testing and debugging
+- UX decisions and design direction
+- Blockchain integration research
+- Final testing and deployment
+
+**All code was reviewed, tested, and debugged by the development team.** AI tools were used as coding assistants, not autonomous developers.
+
+---
+
+## 🏆 Hackathon Prizes
+
+### KeeperHub Prize ($5,000)
+
+**Integration highlights:**
+- Complete x402 protocol implementation
+- Autonomous payment instructions in every 402 response
+- Real-world use case (AI bot monetization)
+- Full on-chain verification
+
+### Uniswap Prize ($5,000)
+
+**Integration highlights:**
+- Complete Uniswap V3 SDK integration
+- Multi-token support (20+ ERC-20 tokens)
+- Real-time swap quotes via API
+- Automatic USDC conversion
+
+---
+
+## 📂 Project Structure
 
 ```
 scraperkast/
-│
-├── packages/
-│   ├── core/                   # @scraperkast/core
-│   │   └── src/
-│   │       ├── botDetection.ts     Bot UA pattern matching (18 bots)
-│   │       ├── pricing.ts          Rule-based pricing engine
-│   │       ├── auth.ts             JWT generation + verification
-│   │       └── analytics.ts        In-memory event tracking
-│   │
-│   └── middleware-express/     # @scraperkast/middleware-express
-│       ├── src/index.ts            Express RequestHandler factory
-│       └── README.md               Package-level docs
-│
-├── examples/
-│   └── express-demo/           Runnable demo Express app
-│       ├── src/server.ts
-│       ├── test-bot.ts             CLI bot simulator
-│       └── DEMO.md                 5-minute demo video script
-│
 ├── apps/
-│   └── landing/                Next.js 14 landing page (scraperkast.com)
-│
-├── docs/                       Full documentation (Markdown)
-│   ├── getting-started.md
-│   ├── configuration.md
-│   ├── pricing-rules.md
-│   ├── authentication.md
-│   ├── analytics.md
-│   ├── bot-detection.md
-│   ├── api-reference.md
-│   └── self-hosting.md
-│
-├── tsconfig.base.json          Shared TypeScript config
-├── package.json                Workspace root
-├── LICENSE                     MIT
-└── CONTRIBUTING.md             Contributor guide
+│   └── dashboard/           # Main Next.js app
+│       ├── app/            # Next.js 14 app router
+│       │   ├── api/        # API routes
+│       │   ├── dashboard/  # Dashboard pages
+│       │   └── auth/       # Auth pages
+│       ├── lib/            # Core libraries
+│       │   ├── middleware/ # x402 + Uniswap
+│       │   └── wallet/     # Smart wallet system
+│       └── prisma/         # Database schema
+├── .env.example            # Environment template
+├── README.md               # This file
+├── FEEDBACK_KEEPERHUB.md   # KeeperHub feedback
+└── FEEDBACK_UNISWAP.md     # Uniswap feedback
 ```
 
 ---
 
-## Documentation
+## 📜 License
 
-| Guide | Description |
-|---|---|
-| [Getting Started](./docs/getting-started.md) | Install, quick start, testing locally |
-| [Configuration](./docs/configuration.md) | Every `ScraperKastConfig` option |
-| [Pricing Rules](./docs/pricing-rules.md) | Rule specificity, wildcards, patterns |
-| [Authentication](./docs/authentication.md) | JWT token lifecycle and security |
-| [Analytics](./docs/analytics.md) | Event tracking and stats |
-| [Bot Detection](./docs/bot-detection.md) | All 18 bots with UA strings |
-| [API Reference](./docs/api-reference.md) | Full TypeScript API |
-| [Self-Hosting](./docs/self-hosting.md) | Docker, nginx, production checklist |
+MIT License
 
 ---
 
-## Demo
+## 📞 Contact
 
-A complete runnable demo lives in [`examples/express-demo/`](./examples/express-demo).
-
-```bash
-cd examples/express-demo
-cp .env.example .env
-npm install
-npm run dev
-# → http://localhost:3000
-```
-
-Simulate a bot with the included test client:
-
-```bash
-# Bot without token → 402
-tsx test-bot.ts --bot "GPTBot/1.0" --path /blog/my-post
-
-# Bot with token → 200
-tsx test-bot.ts --bot "GPTBot/1.0" --path /blog/my-post --token eyJhbGc...
-
-# All options
-tsx test-bot.ts --help
-```
+**Developer:** Chirag Ravishankar  
+**Email:** chiragravishankar@gmail.com
 
 ---
 
-## Development
-
-```bash
-# Clone
-git clone https://github.com/chiragravishankar/scraperkast.git
-cd scraperkast
-
-# Install all workspace dependencies
-npm install
-
-# Build all packages
-npm run build --workspaces --if-present
-
-# Run all tests
-npm test --workspaces --if-present
-```
-
----
-
-## Contributing
-
-Contributions are welcome and appreciated. See [CONTRIBUTING.md](./CONTRIBUTING.md)
-for the development setup, coding standards, PR process, and a list of
-good first issues.
-
----
-
-## License
-
-[MIT](./LICENSE) © 2026 Chirag Ravishankar
-
----
-
-<p align="center">
-  <a href="https://scraperkast.com">scraperkast.com</a> ·
-  <a href="https://www.npmjs.com/package/@scraperkast/middleware-express">npm</a> ·
-  <a href="./docs/README.md">Docs</a> ·
-  <a href="https://github.com/chiragravishankar/scraperkast/issues">Issues</a> ·
-  <a href="https://github.com/chiragravishankar/scraperkast/discussions">Discussions</a>
-</p>
+**Built with ❤️ during ETHGlobal Online Hackathon 2026**
