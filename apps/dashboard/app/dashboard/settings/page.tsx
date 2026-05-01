@@ -110,7 +110,7 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
 
 type Tab = 'general' | 'payment' | 'automation' | 'api' | 'security' | 'notifications' | 'advanced';
 
-const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
+const TABS: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'general',       label: 'General',         icon: Globe      },
   { id: 'payment',       label: 'Payment',          icon: CreditCard },
   { id: 'automation',    label: 'Automation',       icon: Zap        },
@@ -241,7 +241,7 @@ function PaymentTab() {
         <Toggle checked={p.autoWithdrawEnabled} onChange={v => set({ autoWithdrawEnabled: v })}
           label="Enable Auto-Withdraw" hint="Automatically withdraw to your wallet when balance exceeds threshold" />
         <Field label="Withdrawal Wallet Address">
-          <Input value={p.withdrawalWallet} onChange={v => set({ withdrawalWallet: v })} mono placeholder="Solana address (base58)" />
+          <Input value={p.withdrawalWallet} onChange={v => set({ withdrawalWallet: v })} mono placeholder="0x… Ethereum address" />
         </Field>
       </Card>
 
@@ -401,11 +401,10 @@ function APITab() {
 
 app.use(scraperKast({
   jwtSecret:      process.env.JWT_SECRET,
-  solana: {
+  ethereum: {
     enabled:        true,
-    network:        'devnet',
+    network:        'base-sepolia',
     ownerWallet:    '${settings.payment.withdrawalWallet.slice(0,16)}…',
-    platformWallet: 'HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH',
   },
   rules: [
     { id: 'blog', path: '/blog/*', pricePerPage: 1000 },
@@ -810,7 +809,7 @@ function AdvancedTab() {
           <Toggle checked={av.verboseLogging}   onChange={v => set({ verboseLogging: v })}
             label="Verbose Logging"   hint="Log all middleware decisions to stdout" />
           <Toggle checked={av.testMode}         onChange={v => set({ testMode: v })}
-            label="Test Mode (Devnet)" hint="Use Solana devnet — transactions have no real value" />
+            label="Test Mode (Testnet)" hint="Use Base Sepolia testnet — transactions have no real value" />
           <Toggle checked={av.maintenanceMode}  onChange={v => set({ maintenanceMode: v })}
             label="Maintenance Mode"  hint="Return 503 to all bots while you update rules" />
         </div>

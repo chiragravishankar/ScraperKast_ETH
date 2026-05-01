@@ -1,0 +1,1262 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   ScraperKast Dashboard — Global dashboard CSS
+   Supplements globals.css with layout-specific helpers and component styles.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Sidebar ────────────────────────────────────────────────────────────────── */
+
+.sidebar {
+  width: 260px;
+  min-width: 260px;
+  max-width: 260px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-edge, #e5e7eb) transparent;
+}
+
+.sidebar::-webkit-scrollbar       { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--color-edge, #e5e7eb); border-radius: 2px; }
+
+/* Sidebar nav items */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 0.8125rem;  /* ~13px */
+  font-weight: 500;
+  color: var(--color-ink-3, #9ca3af);
+  transition: background-color 0.15s ease, color 0.15s ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.nav-item:hover {
+  background-color: var(--color-canvas, #f9fafb);
+  color: var(--color-ink, #111827);
+}
+
+.nav-item.active {
+  background-color: var(--color-accent-muted, #fff1ed);
+  color: var(--color-accent, #ff5722);
+  font-weight: 600;
+}
+
+/* Group header */
+.nav-group-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-ink-3, #9ca3af);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  user-select: none;
+}
+
+.nav-group-header:hover {
+  background-color: var(--color-canvas, #f9fafb);
+  color: var(--color-ink, #111827);
+}
+
+.nav-group-header.active {
+  color: var(--color-ink, #111827);
+  font-weight: 600;
+}
+
+/* Group children container — animated reveal */
+.nav-group-children {
+  overflow: hidden;
+  transition: max-height 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity    0.18s ease;
+}
+
+.nav-child-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 38px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-ink-3, #9ca3af);
+  text-decoration: none;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.nav-child-item:hover {
+  background-color: var(--color-canvas, #f9fafb);
+  color: var(--color-ink, #111827);
+}
+
+.nav-child-item.active {
+  color: var(--color-accent, #ff5722);
+  font-weight: 600;
+}
+
+/* ── Stats grid ─────────────────────────────────────────────────────────────── */
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+@media (min-width: 1024px) {
+  .stats-grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .stats-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ── Stat card ──────────────────────────────────────────────────────────────── */
+
+.stat-card {
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-edge, #e5e7eb);
+  border-radius: 16px;
+  padding: 16px;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.stat-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  border-color: var(--color-ink-3, #9ca3af);
+}
+
+.stat-card.accent {
+  border-color: rgba(255, 87, 34, 0.2);
+  background: rgba(255, 87, 34, 0.04);
+}
+
+/* ── Activity feed ──────────────────────────────────────────────────────────── */
+
+.activity-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-edge, #e5e7eb);
+}
+
+.activity-row:last-child {
+  border-bottom: none;
+}
+
+/* Status dots */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-dot.blocked { background: #ef4444; }
+.status-dot.paid    { background: #10b981; }
+.status-dot.allowed { background: #3b82f6; }
+
+/* Live pulse dot (red, top-left of Live Activity card) */
+.live-dot {
+  width:  8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  flex-shrink: 0;
+  animation: live-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  0%, 100% { transform: scale(1);    opacity: 1;   }
+  50%       { transform: scale(1.3); opacity: 0.7; }
+}
+
+/* ── Bot type badges ────────────────────────────────────────────────────────── */
+
+.badge-bot {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 0.6875rem; /* 11px */
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.badge-bot.ai          { background: #ede9fe; color: #6d28d9; border-color: #ddd6fe; }
+.badge-bot.commercial  { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+.badge-bot.opensource  { background: #f0f9ff; color: #0369a1; border-color: #bae6fd; }
+.badge-bot.unknown     { background: var(--color-canvas, #f9fafb); color: var(--color-ink-3, #9ca3af); }
+
+/* ── Protection: action selector pills ─────────────────────────────────────── */
+
+.action-pill {
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  cursor: pointer;
+}
+
+.action-pill.allow  { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+.action-pill.charge { background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }
+.action-pill.block  { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+.action-pill.inactive {
+  background: transparent;
+  color: var(--color-ink-3, #9ca3af);
+  border-color: var(--color-edge, #e5e7eb);
+}
+.action-pill.inactive:hover {
+  background: var(--color-canvas, #f9fafb);
+  color: var(--color-ink, #111827);
+}
+
+/* ── Revenue bar chart ──────────────────────────────────────────────────────── */
+
+.rev-bar-wrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 112px;
+}
+
+.rev-bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.rev-bar {
+  width: 100%;
+  border-radius: 6px 6px 0 0;
+  background: var(--color-edge, #e5e7eb);
+  transition: height 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.rev-bar.current {
+  background: var(--color-accent, #ff5722);
+}
+
+/* ── Breakdown progress bars ────────────────────────────────────────────────── */
+
+.breakdown-track {
+  height: 8px;
+  background: var(--color-edge, #e5e7eb);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.breakdown-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Tables ─────────────────────────────────────────────────────────────────── */
+
+.dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dashboard-table th {
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-ink-3, #9ca3af);
+  background: var(--color-canvas, #f9fafb);
+  border-bottom: 1px solid var(--color-edge, #e5e7eb);
+  white-space: nowrap;
+}
+
+.dashboard-table td {
+  padding: 12px 16px;
+  font-size: 0.875rem;
+  color: var(--color-ink, #111827);
+  border-bottom: 1px solid var(--color-edge, #e5e7eb);
+  vertical-align: middle;
+}
+
+.dashboard-table tr:last-child td {
+  border-bottom: none;
+}
+
+.dashboard-table tr:hover td {
+  background: rgba(249, 250, 251, 0.6);
+}
+
+/* ── Block-rate bar ─────────────────────────────────────────────────────────── */
+
+.block-rate-track {
+  height: 6px;
+  background: var(--color-edge, #e5e7eb);
+  border-radius: 9999px;
+  overflow: hidden;
+  min-width: 60px;
+}
+
+.block-rate-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: #ef4444;
+  transition: width 0.6s ease;
+}
+
+/* ── Verified / Pending status badge ────────────────────────────────────────── */
+
+.site-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.site-status-badge.active  { background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }
+.site-status-badge.pending { background: #fffbeb; color: #92400e; border-color: #fde68a; }
+.site-status-badge.error   { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+
+/* ── Sparkline container ────────────────────────────────────────────────────── */
+
+.sparkline-wrap {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.sparkline-wrap svg {
+  display: block;
+  width: 100%;
+}
+
+/* ── Code snippet blocks ────────────────────────────────────────────────────── */
+
+.code-block {
+  background: var(--color-canvas, #f9fafb);
+  border: 1px solid var(--color-edge, #e5e7eb);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-edge, #e5e7eb);
+}
+
+.code-block pre {
+  padding: 16px;
+  font-size: 0.75rem;
+  font-family: ui-monospace, 'Fira Code', monospace;
+  color: var(--color-ink-2, #374151);
+  line-height: 1.6;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-edge, #e5e7eb) transparent;
+}
+
+/* ── Toggle switch ──────────────────────────────────────────────────────────── */
+
+.toggle-track {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.toggle-track.on  { background: var(--color-accent, #ff5722); }
+.toggle-track.off { background: var(--color-edge, #e5e7eb); }
+
+.toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-track.on .toggle-thumb { transform: translateX(18px); }
+
+/* ── Method card (add site flow) ────────────────────────────────────────────── */
+
+.method-card {
+  border-radius: 16px;
+  border: 2px solid var(--color-edge, #e5e7eb);
+  background: var(--color-surface, #fff);
+  padding: 20px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+}
+
+.method-card:hover {
+  border-color: var(--color-ink-3, #9ca3af);
+}
+
+.method-card.selected {
+  border-color: var(--color-accent, #ff5722);
+  background: rgba(255, 87, 34, 0.04);
+  box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.08);
+}
+
+/* ── Setup checklist ────────────────────────────────────────────────────────── */
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-edge, #e5e7eb);
+}
+
+.checklist-item:last-child {
+  border-bottom: none;
+}
+
+/* ── Recommendation card ────────────────────────────────────────────────────── */
+
+.rec-card {
+  background: var(--color-canvas, #f9fafb);
+  border: 1px solid var(--color-edge, #e5e7eb);
+  border-radius: 12px;
+  padding: 12px;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.rec-card:hover {
+  border-color: var(--color-accent, #ff5722);
+  box-shadow: 0 2px 8px rgba(255, 87, 34, 0.08);
+}
+
+/* ── Empty state ────────────────────────────────────────────────────────────── */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  gap: 12px;
+}
+
+.empty-state-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: var(--color-canvas, #f9fafb);
+  border: 1px solid var(--color-edge, #e5e7eb);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Page fade-in ───────────────────────────────────────────────────────────── */
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+.animate-fade-in {
+  animation: fade-in-up 0.25s ease-out both;
+}
+
+/* ── Responsive: collapse sidebar on mobile ─────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+
+  .stats-grid,
+  .stats-grid-4,
+  .stats-grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid,
+  .stats-grid-4,
+  .stats-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Utility: tabular numbers ───────────────────────────────────────────────── */
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ── Scrollbar (global thin style) ─────────────────────────────────────────── */
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-edge, #e5e7eb) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar       { width: 4px; height: 4px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: var(--color-edge, #e5e7eb); border-radius: 2px; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   Bot Rules Table (Protection > Bot Rules tab)
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Avatar gradients by bot type ─────────────────────────────────────────── */
+
+.bot-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.bot-avatar.ai         { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.bot-avatar.scraper    { background: linear-gradient(135deg, #f59e0b, #f97316); }
+.bot-avatar.search     { background: linear-gradient(135deg, #34d399, #0d9488); }
+.bot-avatar.social     { background: linear-gradient(135deg, #f472b6, #e11d48); }
+.bot-avatar.monitoring { background: linear-gradient(135deg, #94a3b8, #475569); }
+
+/* ── Bot type badges ──────────────────────────────────────────────────────── */
+
+.bot-type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.bot-type-badge.ai         { background: #ede9fe; color: #6d28d9; border-color: #ddd6fe; }
+.bot-type-badge.scraper    { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+.bot-type-badge.search     { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+.bot-type-badge.social     { background: #fce7f3; color: #9f1239; border-color: #fbcfe8; }
+.bot-type-badge.monitoring { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+
+/* ── Action pill group ────────────────────────────────────────────────────── */
+
+.action-pill-group {
+  display: flex;
+  gap: 2px;
+}
+
+.action-pill-btn {
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+  text-transform: capitalize;
+}
+
+.action-pill-btn.inactive {
+  background: transparent;
+  color: var(--color-ink-3, #9ca3af);
+  border-color: var(--color-edge, #e5e7eb);
+}
+
+.action-pill-btn.inactive:hover {
+  background: var(--color-canvas, #f9fafb);
+  color: var(--color-ink, #111827);
+}
+
+.action-pill-btn.allow  { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+.action-pill-btn.charge { background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }
+.action-pill-btn.block  { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+
+/* ── Inline price input ───────────────────────────────────────────────────── */
+
+.bot-price-input {
+  width: 80px;
+  padding: 4px 8px 4px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--color-edge, #e5e7eb);
+  font-size: 0.75rem;
+  font-family: ui-monospace, 'Fira Code', monospace;
+  background: var(--color-surface, #fff);
+  color: var(--color-ink, #111827);
+}
+
+.bot-price-input:focus {
+  outline: none;
+  border-color: var(--color-accent, #ff5722);
+  box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.1);
+}
+
+/* ── Sticky table header ──────────────────────────────────────────────────── */
+
+.bots-table-scroll {
+  max-height: 560px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-edge, #e5e7eb) transparent;
+}
+
+.bots-table-scroll::-webkit-scrollbar       { width: 4px; }
+.bots-table-scroll::-webkit-scrollbar-thumb { background: var(--color-edge, #e5e7eb); border-radius: 2px; }
+
+/* ── Filter tab count pill ───────────────────────────────────────────────── */
+
+.filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ── Bulk-action dropdown ─────────────────────────────────────────────────── */
+
+.bulk-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 20;
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-edge, #e5e7eb);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  min-width: 160px;
+  padding: 4px 0;
+  font-size: 0.875rem;
+}
+
+.bulk-dropdown button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 16px;
+  transition: background-color 0.12s ease;
+}
+
+.bulk-dropdown button:hover { background: var(--color-canvas, #f9fafb); }
+
+/* ── Selected row highlight ───────────────────────────────────────────────── */
+
+.bot-row-selected { background: rgba(255, 87, 34, 0.05); }
+.bot-row-disabled { opacity: 0.4; }
+
+/* ── Stats strip (4 cards) ────────────────────────────────────────────────── */
+
+.bot-stats-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .bot-stats-strip { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   Site layout — header & tab bar
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* Header avatar */
+.site-header-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--color-accent-muted, #fff1ed);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Loading skeleton pulse */
+.skeleton-line {
+  background: var(--color-edge, #e5e7eb);
+  border-radius: 6px;
+  animation: skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* Tab bar */
+.site-tab-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-bottom: 1px solid var(--color-edge, #e5e7eb);
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 1px;
+}
+
+.site-tab-bar::-webkit-scrollbar { display: none; }
+
+.site-tab {
+  padding: 10px 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  color: var(--color-ink-3, #9ca3af);
+  text-decoration: none;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.site-tab:hover {
+  color: var(--color-ink, #111827);
+  border-bottom-color: var(--color-edge, #e5e7eb);
+}
+
+.site-tab.active {
+  color: var(--color-accent, #ff5722);
+  border-bottom-color: var(--color-accent, #ff5722);
+  font-weight: 600;
+  background: rgba(255, 87, 34, 0.04);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   Add site page — 3-step flow
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* Step badge (numbered circle) */
+.step-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-accent, #ff5722);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Framework tab switcher */
+.fw-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--color-canvas, #f9fafb);
+  border: 1px solid var(--color-edge, #e5e7eb);
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.fw-tab {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: var(--color-ink-3, #9ca3af);
+  border: 1px solid transparent;
+  background: transparent;
+}
+
+.fw-tab:hover { color: var(--color-ink, #111827); }
+
+.fw-tab.active {
+  background: var(--color-surface, #fff);
+  color: var(--color-ink, #111827);
+  border-color: var(--color-edge, #e5e7eb);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* DNS details accordion */
+details.dns-accordion > summary {
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-ink-3, #9ca3af);
+  transition: color 0.12s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+details.dns-accordion > summary::-webkit-details-marker { display: none; }
+details.dns-accordion > summary:hover { color: var(--color-ink, #111827); }
+
+details.dns-accordion[open] > summary { color: var(--color-ink-2, #374151); }
+
+/* Env-var hint box */
+.env-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  padding: 12px;
+  margin-top: 12px;
+}
+
+.env-hint code {
+  font-family: ui-monospace, 'Fira Code', monospace;
+  font-size: 0.75rem;
+  background: #fef3c7;
+  padding: 1px 4px;
+  border-radius: 4px;
+  color: #92400e;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   Revenue Dashboard — payment method badges & breakdown bars
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Method badge (inline chip) ──────────────────────────────────────────── */
+
+.method-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 0.6875rem;   /* 11px */
+  font-weight: 600;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+/* x402 — purple (direct USDC transfer) */
+.method-badge-x402 {
+  background: #ede9fe;
+  color:      #6d28d9;
+  border-color: #ddd6fe;
+}
+
+/* Uniswap — pink (any ERC-20 → USDC swap) */
+.method-badge-uniswap {
+  background: #fdf2f8;
+  color:      #be185d;
+  border-color: #fbcfe8;
+}
+
+/* Direct — green (manual / legacy) */
+.method-badge-direct {
+  background: #ecfdf5;
+  color:      #065f46;
+  border-color: #a7f3d0;
+}
+
+/* ── Breakdown fill colours ──────────────────────────────────────────────── */
+
+/* x402 — purple */
+.breakdown-fill-x402 {
+  background: linear-gradient(90deg, #7c3aed, #6d28d9);
+}
+
+/* Uniswap — pink-to-rose */
+.breakdown-fill-uniswap {
+  background: linear-gradient(90deg, #ec4899, #be185d);
+}
+
+/* Direct — emerald */
+.breakdown-fill-direct {
+  background: linear-gradient(90deg, #10b981, #059669);
+}
+
+/* Top-bots bar — accent orange */
+.breakdown-fill-bot {
+  background: linear-gradient(90deg, var(--color-accent, #ff5722), #ea4300);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   Wallet Dashboard — balance card, transaction list, modals
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Balance card (purple gradient — distinct from orange site accent) ──────── */
+
+.wallet-balance-card {
+  background: linear-gradient(135deg, #6366f1 0%, #7c3aed 50%, #5b21b6 100%);
+  color: #fff;
+  border-radius: 20px;
+  padding: 28px;
+  box-shadow: 0 12px 32px rgba(99, 102, 241, 0.30);
+}
+
+.wallet-balance-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.wallet-balance-amount {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+@media (max-width: 480px) {
+  .wallet-balance-amount { font-size: 2.25rem; }
+}
+
+/* ── Balance card action buttons ────────────────────────────────────────────── */
+
+.wallet-btn-withdraw {
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: #fff;
+  color: #6366f1;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+  text-align: center;
+}
+
+.wallet-btn-withdraw:hover:not(:disabled) {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.wallet-btn-withdraw:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.wallet-btn-deposit {
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  text-align: center;
+}
+
+.wallet-btn-deposit:hover {
+  background: rgba(255, 255, 255, 0.26);
+  transform: translateY(-1px);
+}
+
+/* ── Generic primary button (used in modal footer) ──────────────────────────── */
+
+.btn-primary {
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: var(--color-accent, #ff5722);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.btn-primary:hover:not(:disabled) { opacity: 0.88; }
+.btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Withdraw page
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Withdraw card (form wrapper) ───────────────────────────────────────────── */
+
+.withdraw-card {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-edge, #e5e7eb);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+/* ── Balance info strip ─────────────────────────────────────────────────────── */
+
+.withdraw-balance-info {
+  background: var(--color-canvas, #f9fafb);
+  border: 1px solid var(--color-edge, #e5e7eb);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.withdraw-balance-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+}
+
+.withdraw-balance-row--total {
+  padding-top: 8px;
+  margin-top: 2px;
+  border-top: 1px solid var(--color-edge, #e5e7eb);
+  font-size: 0.8125rem;
+}
+
+.withdraw-balance-label {
+  color: var(--color-ink-3, #9ca3af);
+  font-weight: 500;
+}
+
+.withdraw-balance-value {
+  color: var(--color-ink, #111827);
+  font-weight: 600;
+}
+
+/* ── Form group ─────────────────────────────────────────────────────────────── */
+
+.withdraw-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.withdraw-form-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-ink-2, #374151);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.withdraw-form-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--color-canvas, #f9fafb);
+  border: 1px solid var(--color-edge, #e5e7eb);
+  border-radius: 10px;
+  font-size: 0.875rem;
+  color: var(--color-ink, #111827);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.withdraw-form-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+  background: #fff;
+}
+
+.withdraw-form-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.withdraw-form-input--error {
+  border-color: #ef4444;
+}
+
+.withdraw-form-input--error:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+
+.withdraw-form-hint {
+  font-size: 0.6875rem;  /* ~11px */
+  color: var(--color-ink-3, #9ca3af);
+}
+
+/* ── Field-level messages ───────────────────────────────────────────────────── */
+
+.withdraw-field-error {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: #ef4444;
+}
+
+.withdraw-field-success {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: #10b981;
+}
+
+/* ── Error banner ───────────────────────────────────────────────────────────── */
+
+.withdraw-error-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  color: #dc2626;
+  font-size: 0.8125rem;
+}
+
+/* ── Testnet notice ─────────────────────────────────────────────────────────── */
+
+.withdraw-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+}
+
+/* ── Submit button ──────────────────────────────────────────────────────────── */
+
+.withdraw-btn-submit {
+  width: 100%;
+  padding: 13px 20px;
+  border-radius: 12px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  background: #6366f1;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease, transform 0.1s ease;
+  letter-spacing: -0.01em;
+}
+
+.withdraw-btn-submit:hover:not(:disabled) {
+  background: #4f46e5;
+  transform: translateY(-1px);
+}
+
+.withdraw-btn-submit:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.withdraw-btn-submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Settings — smart wallet read-only display
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Read-only field row (input + copy button side by side) ─────────────────── */
+
+.read-only-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.read-only-field input {
+  flex: 1;
+}
+
+/* ── Inline copy button (sits inside .read-only-field) ──────────────────────── */
+
+.btn-copy-inline {
+  padding: 8px 14px;
+  background: #4f46e5;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, opacity 0.15s ease;
+  shrink: 0;
+}
+
+.btn-copy-inline:hover:not(:disabled) {
+  background: #4338ca;
+}
+
+.btn-copy-inline:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+}
+
+/* ── Info box (indigo tinted, used for "how it works" explanations) ──────────── */
+
+.info-box {
+  margin-top: 4px;
+  padding: 14px 16px;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 10px;
+  font-size: 0.8125rem;
+  color: #3730a3;
+  line-height: 1.5;
+}
+
+.info-box strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #4338ca;
+  font-weight: 700;
+}
+
+.info-box ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.info-box li {
+  margin-bottom: 4px;
+}
+
+.info-box a {
+  color: #4f46e5;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.info-box a:hover {
+  text-decoration: underline;
+}

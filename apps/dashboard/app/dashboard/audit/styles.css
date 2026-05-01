@@ -1,0 +1,184 @@
+/* ── Scraper Audit — custom styles ───────────────────────────────────────────
+ *
+ * Imported by AuditResults.tsx.
+ * Tailwind handles layout; this file adds:
+ *   • Card lift + glow microinteractions
+ *   • Indicator dot breathe animation
+ *   • Status badge pulse
+ *   • Score ring entrance
+ *   • Shimmer skeleton
+ *   • Custom scrollbar
+ *   • Responsive 3-col grid
+ * ────────────────────────────────────────────────────────────────────────── */
+
+/* ── Base card transition ─────────────────────────────────────────────────── */
+
+.scraper-card {
+  transition:
+    transform    220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow   220ms ease,
+    border-color 180ms ease;
+}
+
+.scraper-card:hover {
+  transform: translateY(-3px);
+}
+
+/* ── Exposed card (2 px red border + red glow on hover) ──────────────────── */
+
+.card-exposed {
+  border-width: 2px;
+  border-color: #fca5a5; /* red-300 */
+}
+
+.card-exposed:hover {
+  box-shadow: 0 6px 28px -4px rgba(239, 68, 68, 0.22);
+  animation: glow-red 2.4s ease-in-out infinite;
+}
+
+/* ── Blocked card (2 px green border + subtle green glow on hover) ────────── */
+
+.card-blocked {
+  border-width: 2px;
+  border-color: #6ee7b7; /* emerald-300 */
+}
+
+.card-blocked:hover {
+  box-shadow: 0 6px 24px -4px rgba(16, 185, 129, 0.15);
+}
+
+/* ── Skipped card (1 px amber dashed border) ─────────────────────────────── */
+
+.card-skipped {
+  border-width: 1px;
+  border-style: dashed;
+  border-color: #fcd34d; /* amber-300 */
+  opacity: 0.85;
+}
+
+/* ── Indicator dot ────────────────────────────────────────────────────────── */
+
+.indicator-dot {
+  width:         10px;
+  height:        10px;
+  border-radius: 50%;
+  flex-shrink:   0;
+  display:       inline-block;
+}
+
+/* Exposed — red with breathe/ripple */
+.indicator-dot.exposed {
+  background: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
+  animation:  breathe-red 2s ease-in-out infinite;
+}
+
+/* Blocked — solid emerald, no animation */
+.indicator-dot.blocked {
+  background: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.20);
+}
+
+/* Skipped — amber, dim */
+.indicator-dot.skipped {
+  background: #f59e0b;
+  opacity: 0.7;
+}
+
+/* ── Status badge animations ─────────────────────────────────────────────── */
+
+/* Exposed badge pulses to draw attention */
+.badge-exposed {
+  animation: badge-pulse 2.8s ease-in-out infinite;
+}
+
+/* ── Score ring entrance ─────────────────────────────────────────────────── */
+
+@keyframes ring-fill {
+  from { stroke-dasharray: 0 1000; }
+}
+
+.score-ring circle:last-child {
+  animation: ring-fill 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ── Shimmer skeleton ────────────────────────────────────────────────────── */
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #f9fafb 25%,
+    #e5e7eb 50%,
+    #f9fafb 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 0.5rem;
+}
+
+/* ── Keyframes ───────────────────────────────────────────────────────────── */
+
+@keyframes glow-red {
+  0%, 100% { box-shadow: 0 6px 28px -4px rgba(239, 68, 68, 0.18); }
+  50%       { box-shadow: 0 8px 36px -4px rgba(239, 68, 68, 0.30); }
+}
+
+@keyframes breathe-red {
+  0%, 100% {
+    transform:  scale(1);
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
+  }
+  50% {
+    transform:  scale(1.22);
+    box-shadow: 0 0 0 5px rgba(239, 68, 68, 0.08);
+  }
+}
+
+@keyframes badge-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.72; }
+}
+
+/* ── Thin custom scrollbar (modal pre/code blocks) ───────────────────────── */
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #e5e5e5 transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar         { width: 5px; height: 5px; }
+.scrollbar-thin::-webkit-scrollbar-track   { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb   {
+  background-color: #e5e5e5;
+  border-radius: 9999px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover { background-color: #d1d5db; }
+
+/* ── Responsive 3-col grid ───────────────────────────────────────────────── */
+/*
+ * With a 260 px sidebar, the breakpoint where three equally-sized cards
+ * remain comfortable is ~1120 px. Below that, 2-col is safer.
+ */
+
+@media (max-width: 1119px) {
+  .scraper-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1120px) {
+  .scraper-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* ── Tier section header (AI group) ─────────────────────────────────────── */
+
+.tier-header-ai {
+  background: linear-gradient(135deg, rgb(239 246 255 / 0.9), rgb(219 234 254 / 0.45));
+}

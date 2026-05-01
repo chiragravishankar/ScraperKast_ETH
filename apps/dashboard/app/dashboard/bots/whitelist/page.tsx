@@ -13,7 +13,7 @@ function BotList({
   onRemove, onAdd, addLabel,
 }: {
   title:       string;
-  icon:        React.ElementType;
+  icon:        React.ComponentType<{ className?: string }>;
   bots:        BotDef[];
   accentClass: string;
   emptyMsg:    string;
