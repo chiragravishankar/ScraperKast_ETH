@@ -55,9 +55,10 @@ export function formatDateTime(date: Date): string {
   });
 }
 
-/** Build Solana Explorer URL for a transaction hash. */
-export function explorerUrl(txHash: string, network: 'devnet' | 'mainnet' = 'devnet'): string {
-  const base = 'https://explorer.solana.com';
-  const cluster = network === 'devnet' ? '?cluster=devnet' : '';
-  return `${base}/tx/${txHash}${cluster}`;
+/** Build a blockchain explorer URL for a transaction hash (Base Sepolia / Sepolia). */
+export function explorerUrl(txHash: string, network: 'base-sepolia' | 'sepolia' = 'base-sepolia'): string {
+  const base = network === 'sepolia'
+    ? 'https://sepolia.etherscan.io'
+    : 'https://sepolia.basescan.org';
+  return `${base}/tx/${txHash}`;
 }

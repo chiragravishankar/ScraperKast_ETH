@@ -2,6 +2,8 @@
 // Shared utilities: bot detection, pricing, auth, analytics, Solana
 
 export * from './botDetection.js';
+export * from './behavioralAnalysis.js';
+export * from './botScoring.js';
 export * from './pricing.js';
 export * from './auth.js';
 export * from './analytics.js';

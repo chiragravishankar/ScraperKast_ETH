@@ -14,27 +14,45 @@ const config: Config = {
           mid:   '#00A896',
           light: '#02C39A',
         },
-        // ── New semantic tokens (TollBit / Vercel aesthetic) ───────────
-        canvas:  '#FAF9F7',      // warm cream page background
-        surface: '#FFFFFF',      // card / panel background
+        // ── Dashboard semantic tokens (TollBit / Vercel aesthetic) ────
+        canvas:  '#FAF9F7',
+        surface: '#FFFFFF',
         ink: {
-          DEFAULT: '#1A1A1A',    // primary text
-          2:       '#6B6B6B',    // secondary text
-          3:       '#9CA3AF',    // placeholder / disabled
+          DEFAULT: '#1A1A1A',
+          2:       '#6B6B6B',
+          3:       '#9CA3AF',
         },
         edge: {
-          DEFAULT: '#E5E5E5',    // standard border
-          2:       '#F0EFED',    // subtle divider
+          DEFAULT: '#E5E5E5',
+          2:       '#F0EFED',
         },
         accent: {
-          DEFAULT: '#FF5722',    // CTA orange-red
+          DEFAULT: '#FF5722',
           hover:   '#E64A19',
-          muted:   '#FFF3F0',    // light tint for hover/active states
+          muted:   '#FFF3F0',
+        },
+        // ── Landing page — dark / futuristic tokens ────────────────────
+        void:    '#0A0A0A',       // deep black background
+        'dark-surface': {
+          DEFAULT: '#141414',     // elevated surfaces
+          2:       '#1E1E1E',     // cards / modals
+          3:       '#252525',     // hover states
+        },
+        neon: {
+          DEFAULT: '#00F0FF',     // cyan neon accent
+          dim:     'rgba(0,240,255,0.15)',
+          glow:    'rgba(0,240,255,0.5)',
+        },
+        magenta: {
+          DEFAULT: '#FF006E',     // magenta accent
+          dim:     'rgba(255,0,110,0.15)',
         },
       },
       fontFamily: {
-        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
-        mono: ['"Fira Code"', '"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+        sans:    ['var(--font-inter)', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        display: ['var(--font-outfit)', 'Inter', 'sans-serif'],
+        space:   ['var(--font-space)', 'Inter', 'sans-serif'],
+        mono:    ['"Fira Code"', '"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
       fontSize: {
         '2xs': ['11px', { lineHeight: '16px' }],

@@ -1,0 +1,25 @@
+{
+  "name": "autonomous-agent-keeperhub",
+  "version": "0.1.0",
+  "description": "Autonomous AI agent that pays for content via KeeperHub execution layer — ETHGlobal submission",
+  "type": "module",
+  "scripts": {
+    "setup": "tsx src/setup.ts",
+    "start": "tsx src/agent.ts",
+    "demo":  "bash demo.sh"
+  },
+  "dependencies": {
+    "axios":   "^1.6.8",
+    "chalk":   "^5.3.0",
+    "dotenv":  "^16.4.5",
+    "ethers":  "^6.11.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsx":         "^4.7.1",
+    "typescript":  "^5.4.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

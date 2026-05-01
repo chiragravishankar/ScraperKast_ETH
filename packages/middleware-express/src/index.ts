@@ -1,13 +1,13 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import {
-  detectBot,
+  detectBotEnhanced,
   PricingEngine,
   AuthService,
   AnalyticsCollector,
   DodoPaymentService,
   SessionStore,
 } from '@scraperkast/core';
-import type { PricingRule, PriceResult, RequestCounter } from '@scraperkast/core';
+import type { PricingRule, PriceResult, RequestCounter, RequestContext } from '@scraperkast/core';
 import { SolanaPaymentHandler } from './solanaHandler.js';
 import { createVerifyPaymentRouter } from './routes/verifyPayment.js';
 import { createDodoCheckoutRouter } from './routes/dodoCheckout.js';
@@ -61,6 +61,35 @@ export interface ScraperKastConfig {
    * wallets to route USDC to.
    */
   dodo?: DodoPaymentConfig;
+
+  /**
+   * Behavioral detection tuning.
+   *
+   * By default the middleware runs both User-Agent matching (catches declared
+   * bots like GPTBot) and behavioral analysis (catches disguised commercial
+   * scrapers like Firecrawl and BrightData). These options let you tune or
+   * disable each layer independently.
+   */
+  detection?: {
+    /**
+     * Minimum confidence (0–100) required to act on a behavioral detection.
+     * UA-based detections always have confidence 100 and bypass this threshold.
+     * @default 70
+     */
+    confidenceThreshold?: number;
+    /**
+     * Run behavioral analysis (RPS, sequential access, fingerprint checks)
+     * to catch scrapers that fake a Chrome User-Agent.
+     * @default true
+     */
+    enableBehavioral?: boolean;
+    /**
+     * Log every bot detection (method, confidence, botName) to console.
+     * Useful during initial setup; leave off in production to reduce noise.
+     * @default false
+     */
+    logDetections?: boolean;
+  };
 
   /**
    * Called after a bot is allowed through with a valid, credited JWT.
@@ -188,9 +217,14 @@ export function scraperKast(config: ScraperKastConfig): Router {
     enableAnalytics = false,
     solana,
     dodo,
+    detection,
     onAuthorized,
     onPaymentRequired,
   } = config;
+
+  const confidenceThreshold = detection?.confidenceThreshold ?? 70;
+  const enableBehavioral    = detection?.enableBehavioral    ?? true;
+  const logDetections       = detection?.logDetections       ?? false;
 
   const pricingEngine = new PricingEngine(rules, counter);
   const authService   = new AuthService(jwtSecret);
@@ -258,11 +292,31 @@ export function scraperKast(config: ScraperKastConfig): Router {
   ): void {
     void (async () => {
       try {
-        const userAgent = req.headers['user-agent'] ?? '';
-        const detection = detectBot(userAgent);
+        // Build full request context for enhanced detection.
+        const context: RequestContext = {
+          userAgent: req.headers['user-agent'] ?? '',
+          ip:        req.ip ?? (req.socket.remoteAddress ?? ''),
+          headers:   req.headers as Record<string, string | string[] | undefined>,
+          path:      req.path,
+          timestamp: Date.now(),
+        };
 
-        // ── Not a bot ─────────────────────────────────────────────────────
-        if (!detection.isBot || detection.botName === null) {
+        const detection = detectBotEnhanced(context, enableBehavioral);
+
+        if (logDetections && detection.isBot) {
+          const pct = Math.round(detection.confidence * 100);
+          console.log(
+            `[ScraperKast] Bot detected — name="${detection.botName}" ` +
+            `method=${detection.method} confidence=${pct}%` +
+            (detection.behavioralScore !== undefined
+              ? ` score=${detection.behavioralScore}`
+              : ''),
+          );
+        }
+
+        // ── Not a bot (or below confidence threshold) ─────────────────────
+        const confidencePct = detection.confidence * 100;
+        if (!detection.isBot || detection.botName === null || confidencePct < confidenceThreshold) {
           next();
           return;
         }

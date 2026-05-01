@@ -2,8 +2,8 @@
  * Deterministic mock data generator for ScraperKast dashboard demos.
  *
  * All numbers are seeded from a fixed base so charts look stable across
- * refreshes while still feeling live. Real Solana + analytics data will
- * replace this once the on-chain program is deployed.
+ * refreshes while still feeling live. Real Ethereum (Base Sepolia) + analytics
+ * data replaces this via the Prisma DB once the x402 middleware is active.
  */
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -46,9 +46,9 @@ export interface Transaction {
   totalPrice:    number;
   txHash:        string;
   status:        'confirmed' | 'pending' | 'failed';
-  network:       'devnet' | 'mainnet';
-  /** How the bot paid: direct Solana transfer or Dodo credit-card checkout. */
-  paymentMethod: 'solana' | 'dodo';
+  network:       'base-sepolia' | 'sepolia';
+  /** How the bot paid: x402 direct USDC or Dodo credit-card checkout. */
+  paymentMethod: 'x402' | 'dodo';
   /** Dodo session ID — only present when paymentMethod === 'dodo'. */
   dodoSessionId?: string;
 }
@@ -107,7 +107,7 @@ const PATHS = [
   '/docs/getting-started',
   '/pricing',
   '/about',
-  '/blog/solana-payments',
+  '/blog/x402-payments',
   '/docs/pricing-rules',
   '/blog/openai-crawlers',
   '/research/language-models',
@@ -220,7 +220,7 @@ export function generateRecentActivity(count = 20): RequestEvent[] {
   return events.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 }
 
-/** Generate Solana transaction history. */
+/** Generate mock transaction history (Ethereum Base Sepolia). */
 export function generateTransactions(count = 50): Transaction[] {
   const now    = Date.now();
   const txs: Transaction[] = [];
@@ -254,8 +254,8 @@ export function generateTransactions(count = 50): Transaction[] {
       totalPrice:    base + fee,
       txHash:        hash,
       status:        statuses[statusIdx]!,
-      network:       'devnet',
-      paymentMethod: isDodo ? 'dodo' : 'solana',
+      network:       'base-sepolia',
+      paymentMethod: isDodo ? 'dodo' : 'x402',
       ...(dodoSession ? { dodoSessionId: dodoSession } : {}),
     });
   }
