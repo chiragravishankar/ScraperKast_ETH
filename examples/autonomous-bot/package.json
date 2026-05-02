@@ -4,8 +4,10 @@
   "description": "Autonomous AI agent demo — HTTP 402 + USDC payment + Base Sepolia",
   "main": "agent.js",
   "scripts": {
-    "demo": "node agent.js",
-    "demo:verbose": "DEBUG=* node agent.js"
+    "demo":           "node agent.js",
+    "demo:verbose":   "DEBUG=* node agent.js",
+    "demo:uniswap":   "node agent-uniswap.js",
+    "demo:uniswap:v": "DEBUG=* node agent-uniswap.js"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

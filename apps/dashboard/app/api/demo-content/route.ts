@@ -61,10 +61,28 @@ function isBot(userAgent: string): boolean {
 
 // ── On-chain verification ─────────────────────────────────────────────────────
 
-async function verifyPayment(txHash: string, recipient: string): Promise<boolean> {
-  const networkCfg    = getNetworkConfig(NETWORK);
-  const usdcAddress   = networkCfg.usdc.toLowerCase();
-  const recipientLow  = recipient.toLowerCase();
+const TRANSFER_TOPIC =
+  '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef' as const;
+
+interface PaymentResult {
+  verified:  boolean;
+  method:    'x402' | 'uniswap';
+  tokenIn?:  string;  // non-USDC input token address (swap payments only)
+}
+
+/**
+ * Verify that txHash delivered ≥ PRICE_USDC to recipient on-chain.
+ * Works for both:
+ *   • x402  — direct ERC-20 USDC transfer from bot to recipient
+ *   • uniswap — token swap where Uniswap sends USDC to recipient as output
+ *
+ * Method is inferred from whether any non-USDC Transfer events appear in
+ * the same receipt (i.e. the input token was transferred out of the bot).
+ */
+async function verifyPayment(txHash: string, recipient: string): Promise<PaymentResult> {
+  const networkCfg   = getNetworkConfig(NETWORK);
+  const usdcAddress  = networkCfg.usdc.toLowerCase();
+  const recipientLow = recipient.toLowerCase();
 
   try {
     const client = createPublicClient({
@@ -76,41 +94,41 @@ async function verifyPayment(txHash: string, recipient: string): Promise<boolean
       hash: txHash as `0x${string}`,
     });
 
-    if (receipt.status !== 'success') return false;
+    if (receipt.status !== 'success') return { verified: false, method: 'x402' };
 
-    // Scan Transfer events for USDC sent to our recipient
-    const TRANSFER_TOPIC =
-      '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef' as const;
-
-    const ERC20_ABI = parseAbi([
-      'event Transfer(address indexed from, address indexed to, uint256 value)',
-    ]);
+    let usdcFound  = false;
+    let tokenIn: string | undefined;
 
     for (const log of receipt.logs) {
       if (log.topics[0] !== TRANSFER_TOPIC) continue;
-      if (log.address.toLowerCase() !== usdcAddress) continue;
 
-      try {
-        // topic[2] is the `to` address, ABI-encoded (zero-padded to 32 bytes)
-        const toRaw = log.topics[2]; // e.g. 0x000...abcdef...
-        if (!toRaw) continue;
-        const toAddr = `0x${toRaw.slice(-40)}`.toLowerCase();
+      const contractAddr = log.address.toLowerCase();
+      const toRaw        = log.topics[2];
+      if (!toRaw) continue;
+      const toAddr = `0x${toRaw.slice(-40)}`.toLowerCase();
 
+      if (contractAddr === usdcAddress) {
+        // USDC Transfer → check it's going to our recipient with ≥ expected amount
         if (toAddr === recipientLow) {
-          // Confirm amount ≥ expected (6 decimals)
-          const minAmount = BigInt(Math.floor(PRICE_USDC * 1_000_000 * 0.99)); // 1% tolerance
-          const value = BigInt(log.data);
-          if (value >= minAmount) return true;
+          try {
+            const minAmount = BigInt(Math.floor(PRICE_USDC * 1_000_000 * 0.99)); // 1% slippage
+            if (BigInt(log.data) >= minAmount) usdcFound = true;
+          } catch { /* malformed data */ }
         }
-      } catch {
-        // skip malformed log
+      } else {
+        // Non-USDC Transfer → this is the swap input token (e.g. WETH leaving the bot)
+        if (!tokenIn) tokenIn = log.address;
       }
     }
 
-    return false;
+    if (!usdcFound) return { verified: false, method: 'x402' };
+
+    // If a non-USDC token was transferred in the same tx, it was a swap payment
+    const method: 'x402' | 'uniswap' = tokenIn ? 'uniswap' : 'x402';
+    return { verified: true, method, tokenIn };
   } catch (err) {
     console.error('[demo-content] verification error:', err);
-    return false;
+    return { verified: false, method: 'x402' };
   }
 }
 
@@ -167,6 +185,7 @@ async function logPaymentToDb(
   txHash:    string,
   userAgent: string,
   ctx:       DemoContext,
+  payment:   Pick<PaymentResult, 'method' | 'tokenIn'>,
 ): Promise<void> {
   if (!ctx.siteId || !ctx.userId) {
     console.warn('[demo-content] Skipping analytics — no siteId/userId in context');
@@ -186,9 +205,10 @@ async function logPaymentToDb(
         botId,
         botName,
         userAgent,
-        method:    'x402',
+        method:    payment.method,           // 'x402' or 'uniswap'
         amount:    PRICE_USDC,
         currency:  'USDC',
+        tokenIn:   payment.tokenIn ?? null,  // input token address for swaps
         network:   NETWORK,
         txHash,
         verified:  true,
@@ -260,12 +280,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const verified = await verifyPayment(txHash, recipient);
+    const payment = await verifyPayment(txHash, recipient);
 
-    if (verified) {
-      console.log(`[demo-content] ✅ Payment verified. txHash=${txHash} ua=${userAgent} recipient=${recipient}`);
+    if (payment.verified) {
+      console.log(
+        `[demo-content] ✅ Payment verified. method=${payment.method} ` +
+        `tokenIn=${payment.tokenIn ?? 'USDC'} txHash=${txHash}`,
+      );
       // Fire-and-forget analytics — non-blocking, content served regardless
-      if (ctx) void logPaymentToDb(txHash, userAgent, ctx);
+      if (ctx) void logPaymentToDb(txHash, userAgent, ctx, payment);
       return new NextResponse(
         CONTENT_HTML.replace(
           '</article>',
@@ -281,13 +304,18 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // ── Bot without payment — return 402 ─────────────────────────────────────
+  // ── Bot without payment — return 402 with both payment options ───────────
+  // WETH estimate: $0.01 ÷ ~$3,000/ETH = 0.00000333 WETH + 5% buffer ≈ 0.0000035
+  const WETH_ADDRESS = '0x4200000000000000000000000000000000000006';
+  const WETH_ESTIMATED = '0.0000035'; // ~$0.01 worth at current prices
+
   return NextResponse.json(
     {
       error:   'Payment Required',
       code:    402,
       message: `This content requires a payment of ${PRICE_USDC} USDC`,
       payment_options: [
+        // ── Option 1: direct USDC transfer (x402) ──────────────────────────
         {
           method:        'x402',
           network:       NETWORK,
@@ -297,9 +325,34 @@ export async function GET(request: NextRequest) {
           token_address: networkCfg.usdc,
           recipient:     recipient || 'NOT_CONFIGURED — set DEMO_USER_EMAIL in .env.local',
           instructions:  {
-            step_1: `Send exactly ${PRICE_USDC} USDC to the recipient address on Base Sepolia`,
+            step_1: `Send exactly ${PRICE_USDC} USDC to the recipient address on ${NETWORK}`,
             step_2: 'Retry with header: X-Payment-Proof: <txHash>',
-            step_3: 'Content is served automatically after on-chain verification',
+            step_3: 'Content is served after on-chain verification',
+          },
+        },
+        // ── Option 2: Uniswap token swap → USDC (any ERC-20 input) ─────────
+        {
+          method:      'uniswap',
+          network:     NETWORK,
+          chain_id:    networkCfg.chainId,
+          price:       PRICE_USDC,
+          currency:    'USDC',
+          recipient,
+          swap_router: networkCfg.uniswapRouter,
+          fee_tier:    3000, // 0.3% — standard WETH/USDC pool
+          accepted_tokens: [
+            {
+              symbol:           'WETH',
+              address:          WETH_ADDRESS,
+              decimals:         18,
+              estimated_amount: WETH_ESTIMATED,
+            },
+          ],
+          instructions: {
+            step_1: `Approve WETH spend on the swap_router`,
+            step_2: `Call exactOutputSingle: WETH → USDC, amountOut=${PRICE_USDC * 1_000_000} (6 dec), recipient=<above>`,
+            step_3: 'Retry with header: X-Payment-Proof: <txHash>',
+            step_4: 'Server verifies USDC Transfer event to recipient in tx logs',
           },
         },
       ],
