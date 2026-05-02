@@ -23,12 +23,19 @@ export interface SiteSummary {
   };
 }
 
-/** Convert a raw Prisma Site row into the SiteSummary shape the UI expects. */
-function toSummary(site: {
+type SiteRow = {
   id: string; name: string; url: string;
   verified: boolean; active: boolean;
   setupMethod: string; createdAt: Date;
-}): SiteSummary {
+  transactions: Array<{ amount: number }>;
+};
+
+/** Convert a raw Prisma Site row (with transactions) into the SiteSummary shape. */
+function toSummary(site: SiteRow): SiteSummary {
+  // Revenue: sum of verified transactions in USDC → convert to µUSDC for formatUsdcDollar
+  const revenueUsdc  = site.transactions.reduce((s, tx) => s + tx.amount, 0);
+  const revenueMicro = Math.round(revenueUsdc * 1_000_000);
+
   return {
     id:            site.id,
     name:          site.name,
@@ -37,8 +44,13 @@ function toSummary(site: {
     verified:      site.verified,
     installMethod: (site.setupMethod as 'code' | 'dns') ?? null,
     createdAt:     site.createdAt.toISOString(),
-    // Real analytics will come from an events table; mock zeros for new sites
-    stats: { botBlocks: 0, botAllowed: 0, revenue: 0, paidBots: 0, blockRate: 0 },
+    stats: {
+      botBlocks:  0,                           // populated by request-log middleware (future)
+      botAllowed: site.transactions.length,    // paid = allowed through
+      revenue:    revenueMicro,                // µUSDC
+      paidBots:   site.transactions.length,
+      blockRate:  0,
+    },
   };
 }
 
@@ -50,8 +62,23 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
+    // Resolve Prisma user by email (Supabase UUID ≠ Prisma CUID)
+    const dbUser = await prisma.user.findUnique({
+      where:  { email: user.email! },
+      select: { id: true },
+    });
+    if (!dbUser) return NextResponse.json({ sites: [] });
+
+    // Fetch only this user's sites, including verified transaction totals
     const rows = await prisma.site.findMany({
+      where:   { userId: dbUser.id },
       orderBy: { createdAt: 'desc' },
+      include: {
+        transactions: {
+          where:  { verified: true },
+          select: { amount: true },
+        },
+      },
     });
 
     const sites: SiteSummary[] = rows.map(toSummary);
@@ -105,7 +132,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ site: toSummary(site), siteId: site.id }, { status: 201 });
+    return NextResponse.json({ site: toSummary({ ...site, transactions: [] }), siteId: site.id }, { status: 201 });
   } catch (err) {
     console.error('[POST /api/sites]', err);
     return NextResponse.json({ error: 'Failed to create site' }, { status: 500 });
