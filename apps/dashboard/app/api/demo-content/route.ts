@@ -114,18 +114,14 @@ async function verifyPayment(txHash: string, recipient: string): Promise<boolean
   }
 }
 
-// ── Demo context: recipient wallet + site owner ────────────────────────────────
+// ── Demo context: recipient wallet + dedicated demo site ──────────────────────
 //
-// Priority order for the recipient address:
-//   1. DEMO_WALLET_ADDRESS env var (explicit override)
-//   2. Smart wallet auto-generated for DEMO_USER_EMAIL (default: your account)
-//
-// Priority order for which DB user gets credited:
-//   1. DEMO_USER_EMAIL env var
-//   2. Falls back to first site found via DEMO_SITE_ID (legacy)
+// The demo site (id: 'demo_site', url: demo-content.scraperkast.com) is a
+// dedicated site owned by DEMO_USER_EMAIL. All bot payments are attributed
+// to it, keeping the user's personal sites clean.
 
 const DEMO_USER_EMAIL = process.env.DEMO_USER_EMAIL ?? 'chiragchiru51@gmail.com';
-const DEMO_SITE_ID_OVERRIDE = process.env.DEMO_SITE_ID ?? '';
+const DEMO_SITE_ID    = 'demo_site'; // fixed — created by seed/migration
 
 type DemoContext = {
   recipientAddress: string;
@@ -137,12 +133,11 @@ async function getDemoContext(): Promise<DemoContext | null> {
   try {
     // 1. Look up the target user by email
     const user = await prisma.user.findFirst({
-      where:   { email: DEMO_USER_EMAIL },
-      include: { sites: { orderBy: { createdAt: 'asc' }, take: 1 } },
+      where: { email: DEMO_USER_EMAIL },
     });
 
     if (!user) {
-      console.warn(`[demo-content] DEMO_USER_EMAIL "${DEMO_USER_EMAIL}" not found in DB — cannot resolve smart wallet`);
+      console.warn(`[demo-content] DEMO_USER_EMAIL "${DEMO_USER_EMAIL}" not found in DB`);
       return null;
     }
 
@@ -152,14 +147,14 @@ async function getDemoContext(): Promise<DemoContext | null> {
     // 3. Always use the user's deterministic smart wallet as the payment recipient
     const recipientAddress = wallet.address;
 
-    // 4. Use the first site that belongs to this user
-    const siteId = DEMO_SITE_ID_OVERRIDE || (user.sites[0]?.id ?? '');
-
-    if (!siteId) {
-      console.warn(`[demo-content] User "${DEMO_USER_EMAIL}" has no sites — analytics will be skipped`);
+    // 4. Use the dedicated demo site (not the user's first personal site)
+    const site = await prisma.site.findUnique({ where: { id: DEMO_SITE_ID } });
+    if (!site) {
+      console.warn(`[demo-content] demo_site not found in DB — run the seed script`);
+      return null;
     }
 
-    return { recipientAddress, userId: user.id, siteId };
+    return { recipientAddress, userId: user.id, siteId: DEMO_SITE_ID };
   } catch (err) {
     console.error('[demo-content] getDemoContext error:', err);
     return null;
