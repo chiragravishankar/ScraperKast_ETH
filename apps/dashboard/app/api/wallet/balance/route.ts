@@ -7,6 +7,9 @@
  * Response:
  *   { balance, availableBalance, pendingWithdrawals,
  *     smartWalletAddress, withdrawalAddress, currency }
+ *
+ * NOTE: Supabase auth user.id (UUID) ≠ Prisma User.id (CUID).
+ * We always resolve the Prisma row by email to avoid creating orphan users.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -25,30 +28,30 @@ export async function GET(_req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // ── Ensure smart wallet exists (idempotent) ───────────────────────────────
-    const wallet = await ensureUserWallet(user.id, prisma);
-
-    // ── Fetch user record ─────────────────────────────────────────────────────
+    // ── Resolve Prisma user by email ──────────────────────────────────────────
+    // Supabase user.id is a UUID; Prisma User.id is a CUID — they don't match.
+    // Lookup by email finds the correct row every time.
     const dbUser = await prisma.user.findUnique({
-      where:  { id: user.id },
-      select: { balance: true, withdrawalAddress: true, smartWalletAddress: true },
+      where:  { email: user.email! },
+      select: {
+        id:                  true,
+        balance:             true,
+        withdrawalAddress:   true,
+        smartWalletAddress:  true,
+      },
     });
 
     if (!dbUser) {
-      // Should not happen after ensureUserWallet, but guard anyway
-      return NextResponse.json({
-        balance:             0,
-        availableBalance:    0,
-        pendingWithdrawals:  0,
-        smartWalletAddress:  wallet.address,
-        withdrawalAddress:   null,
-        currency:            'USDC',
-      });
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
+
+    // ── Ensure smart wallet exists (idempotent) ───────────────────────────────
+    // Pass the PRISMA user id, not the Supabase UUID
+    const wallet = await ensureUserWallet(dbUser.id, prisma);
 
     // ── Pending withdrawals ───────────────────────────────────────────────────
     const pending = await prisma.walletTransaction.aggregate({
-      where: { userId: user.id, type: 'withdrawal', status: 'pending' },
+      where: { userId: dbUser.id, type: 'withdrawal', status: 'pending' },
       _sum:  { amount: true },
     });
 

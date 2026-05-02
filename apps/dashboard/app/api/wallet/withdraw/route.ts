@@ -5,12 +5,13 @@
  *
  * Flow:
  *  1. Auth check (Supabase)
- *  2. Validate amount and destination address
- *  3. Check available balance (balance minus pending withdrawals)
- *  4. Create a pending WalletTransaction (audit trail before chain call)
- *  5. Decrypt smart wallet key + execute on-chain USDC transfer
- *  6. On success → atomic: confirm tx + decrement User.balance
- *  7. On failure → mark tx failed, balance unchanged
+ *  2. Resolve Prisma user by email (Supabase UUID ≠ Prisma CUID)
+ *  3. Validate amount and destination address
+ *  4. Check available balance (balance minus pending withdrawals)
+ *  5. Create a pending WalletTransaction (audit trail before chain call)
+ *  6. Decrypt smart wallet key + execute on-chain USDC transfer
+ *  7. On success → atomic: confirm tx + decrement User.balance
+ *  8. On failure → mark tx failed, balance unchanged
  *
  * Body: { amount: number, toAddress: string }
  * Response: { txId, txHash, amount, toAddress }
@@ -40,7 +41,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // ── 2. Parse + validate body ──────────────────────────────────────────────
+    // ── 2. Resolve Prisma user by email ───────────────────────────────────────
+    // Supabase user.id is a UUID; Prisma User.id is a CUID — they don't match.
+    // Lookup by email finds the correct row and prevents orphan-user creation.
+    const dbUser = await prisma.user.findUnique({
+      where:  { email: user.email! },
+      select: {
+        id:                       true,
+        balance:                  true,
+        smartWalletEncryptedKey:  true,
+        smartWalletAddress:       true,
+      },
+    });
+
+    if (!dbUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // ── 3. Parse + validate body ──────────────────────────────────────────────
     const body = await req.json() as { amount?: unknown; toAddress?: unknown };
 
     const amount    = typeof body.amount    === 'number' ? body.amount    : parseFloat(String(body.amount ?? ''));
@@ -58,21 +76,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: limitError }, { status: 422 });
     }
 
-    // ── 3. Fetch balance + smart wallet ───────────────────────────────────────
-    const wallet = await ensureUserWallet(user.id, prisma);
+    // ── 4. Fetch/provision smart wallet (using Prisma user id) ────────────────
+    const wallet = await ensureUserWallet(dbUser.id, prisma);
 
-    const dbUser = await prisma.user.findUnique({
-      where:  { id: user.id },
-      select: { balance: true, smartWalletEncryptedKey: true },
-    });
-
-    if (!dbUser || !dbUser.smartWalletEncryptedKey) {
+    if (!dbUser.smartWalletEncryptedKey) {
       return NextResponse.json({ error: 'Smart wallet not found' }, { status: 404 });
     }
 
-    // Compute available (balance - in-flight withdrawals)
+    // ── 5. Check available balance ────────────────────────────────────────────
     const pending = await prisma.walletTransaction.aggregate({
-      where: { userId: user.id, type: 'withdrawal', status: 'pending' },
+      where: { userId: dbUser.id, type: 'withdrawal', status: 'pending' },
       _sum:  { amount: true },
     });
     const pendingAmount    = Number(pending._sum.amount ?? 0);
@@ -85,10 +98,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── 4. Create pending transaction record ──────────────────────────────────
+    // ── 6. Create pending transaction record ──────────────────────────────────
     const pendingTx = await prisma.walletTransaction.create({
       data: {
-        userId:      user.id,
+        userId:      dbUser.id,   // Prisma CUID, not Supabase UUID
         type:        'withdrawal',
         amount,
         network:     'base-sepolia',
@@ -99,7 +112,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // ── 5. Execute on-chain transfer from smart wallet ────────────────────────
+    // ── 7. Execute on-chain transfer from smart wallet ────────────────────────
     let result: Awaited<ReturnType<typeof transferFromSmartWallet>>;
     try {
       result = await transferFromSmartWallet({
@@ -120,7 +133,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── 6. Atomic: confirm + deduct balance ───────────────────────────────────
+    // ── 8. Atomic: confirm + deduct balance ───────────────────────────────────
     await prisma.$transaction([
       prisma.walletTransaction.update({
         where: { id: pendingTx.id },
@@ -131,7 +144,7 @@ export async function POST(req: NextRequest) {
         },
       }),
       prisma.user.update({
-        where: { id: user.id },
+        where: { id: dbUser.id },   // Prisma CUID, not Supabase UUID
         data:  { balance: { decrement: amount } },
       }),
     ]);
