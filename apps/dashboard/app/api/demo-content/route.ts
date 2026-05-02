@@ -142,19 +142,15 @@ async function getDemoContext(): Promise<DemoContext | null> {
     });
 
     if (!user) {
-      console.warn(`[demo-content] DEMO_USER_EMAIL "${DEMO_USER_EMAIL}" not found in DB`);
-      // Last-resort: explicit env vars only
-      const addr   = process.env.DEMO_WALLET_ADDRESS ?? '';
-      const siteId = DEMO_SITE_ID_OVERRIDE;
-      return addr ? { recipientAddress: addr, userId: '', siteId } : null;
+      console.warn(`[demo-content] DEMO_USER_EMAIL "${DEMO_USER_EMAIL}" not found in DB — cannot resolve smart wallet`);
+      return null;
     }
 
     // 2. Auto-provision smart wallet if the user doesn't have one yet
     const wallet = await ensureUserWallet(user.id, prisma);
 
-    // 3. Prefer explicit DEMO_WALLET_ADDRESS override, otherwise use smart wallet
-    const recipientAddress =
-      process.env.DEMO_WALLET_ADDRESS ?? wallet.address;
+    // 3. Always use the user's deterministic smart wallet as the payment recipient
+    const recipientAddress = wallet.address;
 
     // 4. Use the first site that belongs to this user
     const siteId = DEMO_SITE_ID_OVERRIDE || (user.sites[0]?.id ?? '');
