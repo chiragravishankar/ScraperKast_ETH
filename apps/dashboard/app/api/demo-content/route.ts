@@ -17,6 +17,7 @@ import { createPublicClient, http, parseAbi } from 'viem';
 import { baseSepolia } from 'viem/chains';
 import { getNetworkConfig } from '@/lib/config';
 import { prisma } from '@/lib/prisma';
+import { ensureUserWallet } from '@/lib/wallet/smart-wallet';
 
 export const dynamic = 'force-dynamic';
 
@@ -113,21 +114,75 @@ async function verifyPayment(txHash: string, recipient: string): Promise<boolean
   }
 }
 
-// ── Analytics: log verified payment to DB ─────────────────────────────────────
+// ── Demo context: recipient wallet + site owner ────────────────────────────────
+//
+// Priority order for the recipient address:
+//   1. DEMO_WALLET_ADDRESS env var (explicit override)
+//   2. Smart wallet auto-generated for DEMO_USER_EMAIL (default: your account)
+//
+// Priority order for which DB user gets credited:
+//   1. DEMO_USER_EMAIL env var
+//   2. Falls back to first site found via DEMO_SITE_ID (legacy)
 
-const DEMO_SITE_ID = process.env.DEMO_SITE_ID ?? 'site_techblog';
+const DEMO_USER_EMAIL = process.env.DEMO_USER_EMAIL ?? 'chiragchiru51@gmail.com';
+const DEMO_SITE_ID_OVERRIDE = process.env.DEMO_SITE_ID ?? '';
 
-async function logPaymentToDb(txHash: string, userAgent: string, recipient: string): Promise<void> {
+type DemoContext = {
+  recipientAddress: string;
+  userId:           string;
+  siteId:           string;
+};
+
+async function getDemoContext(): Promise<DemoContext | null> {
   try {
-    const site = await prisma.site.findUnique({
-      where:  { id: DEMO_SITE_ID },
-      select: { id: true, userId: true },
+    // 1. Look up the target user by email
+    const user = await prisma.user.findFirst({
+      where:   { email: DEMO_USER_EMAIL },
+      include: { sites: { orderBy: { createdAt: 'asc' }, take: 1 } },
     });
-    if (!site) {
-      console.warn(`[demo-content] DEMO_SITE_ID "${DEMO_SITE_ID}" not found in DB — skipping analytics`);
-      return;
+
+    if (!user) {
+      console.warn(`[demo-content] DEMO_USER_EMAIL "${DEMO_USER_EMAIL}" not found in DB`);
+      // Last-resort: explicit env vars only
+      const addr   = process.env.DEMO_WALLET_ADDRESS ?? '';
+      const siteId = DEMO_SITE_ID_OVERRIDE;
+      return addr ? { recipientAddress: addr, userId: '', siteId } : null;
     }
 
+    // 2. Auto-provision smart wallet if the user doesn't have one yet
+    const wallet = await ensureUserWallet(user.id, prisma);
+
+    // 3. Prefer explicit DEMO_WALLET_ADDRESS override, otherwise use smart wallet
+    const recipientAddress =
+      process.env.DEMO_WALLET_ADDRESS ?? wallet.address;
+
+    // 4. Use the first site that belongs to this user
+    const siteId = DEMO_SITE_ID_OVERRIDE || (user.sites[0]?.id ?? '');
+
+    if (!siteId) {
+      console.warn(`[demo-content] User "${DEMO_USER_EMAIL}" has no sites — analytics will be skipped`);
+    }
+
+    return { recipientAddress, userId: user.id, siteId };
+  } catch (err) {
+    console.error('[demo-content] getDemoContext error:', err);
+    return null;
+  }
+}
+
+// ── Analytics: log verified payment to DB ─────────────────────────────────────
+
+async function logPaymentToDb(
+  txHash:    string,
+  userAgent: string,
+  ctx:       DemoContext,
+): Promise<void> {
+  if (!ctx.siteId || !ctx.userId) {
+    console.warn('[demo-content] Skipping analytics — no siteId/userId in context');
+    return;
+  }
+
+  try {
     // Parse bot name from UA: "CustomAIBot/1.0 (Research Agent)" → "CustomAIBot"
     const botName = userAgent.match(/^([A-Za-z0-9\-\.]+)/)?.[1] ?? 'CustomAIBot';
     const botId   = botName.toLowerCase();
@@ -136,7 +191,7 @@ async function logPaymentToDb(txHash: string, userAgent: string, recipient: stri
     await prisma.transaction.upsert({
       where:  { txHash },
       create: {
-        siteId:    site.id,
+        siteId:    ctx.siteId,
         botId,
         botName,
         userAgent,
@@ -151,51 +206,44 @@ async function logPaymentToDb(txHash: string, userAgent: string, recipient: stri
       update: {}, // idempotent — nothing to change on replay
     });
 
-    // WalletTransaction — credit revenue to site owner's balance
+    // WalletTransaction — credit revenue to the site owner's balance
     const existing = await prisma.walletTransaction.findFirst({ where: { txHash } });
     if (!existing) {
       await prisma.walletTransaction.create({
         data: {
-          userId:    site.userId,
+          userId:    ctx.userId,
           type:      'revenue',
           amount:    PRICE_USDC,
           network:   NETWORK,
           txHash,
           verified:  true,
-          toAddress: recipient || undefined,
-          siteId:    site.id,
+          toAddress: ctx.recipientAddress || undefined,
+          siteId:    ctx.siteId,
           status:    'confirmed',
         },
       });
 
-      // Increment custodial balance
+      // Increment custodial balance for the site owner
       await prisma.user.update({
-        where: { id: site.userId },
+        where: { id: ctx.userId },
         data:  { balance: { increment: PRICE_USDC } },
       });
     }
 
-    console.log(`[demo-content] 📊 Analytics logged: bot=${botName} site=${site.id} amount=${PRICE_USDC} USDC`);
+    console.log(
+      `[demo-content] 📊 Analytics logged: bot=${botName} site=${ctx.siteId} ` +
+      `user=${ctx.userId} amount=${PRICE_USDC} USDC`,
+    );
   } catch (err) {
     // Non-fatal — content is still served even if analytics fail
     console.error('[demo-content] Analytics logging failed (non-fatal):', err);
   }
 }
 
-// ── Resolve recipient wallet ───────────────────────────────────────────────────
-
-function getRecipientWallet(): string {
-  // Prefer explicit demo wallet env var
-  const explicit = process.env.DEMO_WALLET_ADDRESS ?? process.env.NEXT_PUBLIC_PLATFORM_WALLET_BASE_SEPOLIA;
-  if (explicit) return explicit;
-  // Fallback: tell the user to set it
-  return '';
-}
-
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const userAgent  = request.headers.get('user-agent') ?? '';
+  const userAgent   = request.headers.get('user-agent') ?? '';
   const proofHeader = request.headers.get('x-payment-proof');
 
   // ── Regular browser — no payment needed ──────────────────────────────────
@@ -205,17 +253,18 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const recipient = getRecipientWallet();
+  // Resolve who receives the payment (runs once per bot request)
+  const ctx        = await getDemoContext();
+  const recipient  = ctx?.recipientAddress ?? '';
   const networkCfg = getNetworkConfig(NETWORK);
 
   // ── Bot with payment proof — verify and serve ─────────────────────────────
   if (proofHeader) {
-    // Strip optional "base-sepolia:" prefix
     const txHash = proofHeader.replace(/^base-sepolia:/, '').trim();
 
     if (!recipient) {
       return NextResponse.json(
-        { error: 'Demo wallet not configured — set DEMO_WALLET_ADDRESS in .env.local' },
+        { error: 'Demo wallet not configured — set DEMO_USER_EMAIL or DEMO_WALLET_ADDRESS in .env.local' },
         { status: 500 },
       );
     }
@@ -223,9 +272,9 @@ export async function GET(request: NextRequest) {
     const verified = await verifyPayment(txHash, recipient);
 
     if (verified) {
-      console.log(`[demo-content] ✅ Payment verified. txHash=${txHash} ua=${userAgent}`);
-      // Fire-and-forget analytics (non-blocking — content served regardless)
-      void logPaymentToDb(txHash, userAgent, recipient);
+      console.log(`[demo-content] ✅ Payment verified. txHash=${txHash} ua=${userAgent} recipient=${recipient}`);
+      // Fire-and-forget analytics — non-blocking, content served regardless
+      if (ctx) void logPaymentToDb(txHash, userAgent, ctx);
       return new NextResponse(
         CONTENT_HTML.replace(
           '</article>',
@@ -255,7 +304,7 @@ export async function GET(request: NextRequest) {
           price:         PRICE_USDC,
           currency:      'USDC',
           token_address: networkCfg.usdc,
-          recipient:     recipient || 'NOT_CONFIGURED — set DEMO_WALLET_ADDRESS',
+          recipient:     recipient || 'NOT_CONFIGURED — set DEMO_USER_EMAIL in .env.local',
           instructions:  {
             step_1: `Send exactly ${PRICE_USDC} USDC to the recipient address on Base Sepolia`,
             step_2: 'Retry with header: X-Payment-Proof: <txHash>',
